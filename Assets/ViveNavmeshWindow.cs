@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections.Generic;
 
 public class ViveNavmeshWindow : EditorWindow {
@@ -11,10 +12,8 @@ public class ViveNavmeshWindow : EditorWindow {
         window.Show();
     }
 
-    private LineRenderer line1;
-    private LineRenderer line2;
-    private LineRenderer line3;
-    private LineRenderer line4;
+    [SerializeField]
+    private LineRenderer[] lines;
     private MeshFilter filter;
 
     void OnGUI()
@@ -26,22 +25,22 @@ public class ViveNavmeshWindow : EditorWindow {
             
             filter.mesh = m;
         }
-        line1 = EditorGUILayout.ObjectField(line1, typeof(LineRenderer), true) as LineRenderer;
-        line2 = EditorGUILayout.ObjectField(line2, typeof(LineRenderer), true) as LineRenderer;
-        line3 = EditorGUILayout.ObjectField(line3, typeof(LineRenderer), true) as LineRenderer;
-        line4 = EditorGUILayout.ObjectField(line4, typeof(LineRenderer), true) as LineRenderer;
-        if(GUILayout.Button("Test Border Edge Finder"))
+
+        ScriptableObject target = this;
+        SerializedObject so = new SerializedObject(target);
+        SerializedProperty linesProperty = so.FindProperty("lines");
+        EditorGUILayout.PropertyField(linesProperty, true);
+        so.ApplyModifiedProperties();
+
+        if (GUILayout.Button("Test Border Edge Finder"))
         {
             Mesh m = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
             Vector3[][] border = FindBorderEdges(m);
-            line1.SetVertexCount(border[0].Length);
-            line1.SetPositions(border[0]);
-            line2.SetVertexCount(border[1].Length);
-            line2.SetPositions(border[1]);
-            line3.SetVertexCount(border[2].Length);
-            line3.SetPositions(border[2]);
-            line4.SetVertexCount(border[3].Length);
-            line4.SetPositions(border[3]);
+            for(int x=0;x<border.Length;x++)
+            {
+                lines[x].SetVertexCount(border[x].Length);
+                lines[x].SetPositions(border[x]);
+            }
         }
     }
 
@@ -66,10 +65,57 @@ public class ViveNavmeshWindow : EditorWindow {
         ret.vertices = vertices;
         ret.triangles = triangles;
 
+        RemoveMeshDuplicates(ret);
+
         ret.RecalculateNormals();
         ret.RecalculateBounds();
 
         return ret;
+    }
+
+    // VERY naive implementation of removing duplicate vertices in a mesh.  O(n^2).
+    // If this becomes an actual performance hog, consider changing this to sort the vertices
+    // in the mesh then removing duplicate
+    private static void RemoveMeshDuplicates(Mesh m)
+    {
+        Vector3[] verts = new Vector3[m.vertices.Length];
+        for (int x = 0; x < verts.Length; x++)
+            verts[x] = m.vertices[x];
+
+        int[] elts = new int[m.triangles.Length];
+        for (int x = 0; x < elts.Length; x++)
+            elts[x] = m.triangles[x];
+
+        int size = verts.Length;
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = x + 1; y < size; y++)
+            {
+                Vector3 d = verts[x] - verts[y];
+                d.x = Mathf.Abs(d.x);
+                d.y = Mathf.Abs(d.y);
+                d.z = Mathf.Abs(d.z);
+                if (x != y && d.x < 0.05f && d.y < 0.05f && d.z < 0.05f)
+                {
+                    verts[y] = verts[size - 1];
+                    for (int z = 0; z < elts.Length; z++)
+                    {
+                        if (elts[z] == y)
+                            elts[z] = x;
+
+                        if (elts[z] == size - 1)
+                            elts[z] = y;
+                    }
+                    size--;
+                    y--;
+                }
+            }
+        }
+        
+        Array.Resize<Vector3>(ref verts, size);
+        m.Clear();
+        m.vertices = verts;
+        m.triangles = elts;
     }
 
     // Given some mesh m, calculates a number of polylines that border the mesh.  This may return more than
@@ -176,7 +222,7 @@ public class ViveNavmeshWindow : EditorWindow {
                     break;
                 }
             }
-            if (!found) // acyclic, so break.
+            if (!found)// acyclic, so break.
                 break;
         }
 
@@ -200,7 +246,7 @@ public class ViveNavmeshWindow : EditorWindow {
         {
             // This is done so that if p1 and p2 are switched, the edge has the same hash
             min = p1 < p2 ? p1 : p2;
-            max = p1 > p2 ? p1 : p2;
+            max = p1 >= p2 ? p1 : p2;
         }
 
         public override bool Equals(object obj)
