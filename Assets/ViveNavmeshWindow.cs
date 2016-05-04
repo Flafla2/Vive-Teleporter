@@ -8,39 +8,27 @@ public class ViveNavmeshWindow : EditorWindow {
     [MenuItem("Window/Vive Navmesh Generator")]
     static void Init()
     {
-        ViveNavmeshWindow window = EditorWindow.GetWindow(typeof(ViveNavmeshWindow)) as ViveNavmeshWindow;
+        ViveNavmeshWindow window = EditorWindow.GetWindow(typeof(ViveNavmeshWindow), false, "Vive Navmesh Preprocessor") as ViveNavmeshWindow;
         window.Show();
     }
 
-    [SerializeField]
-    private LineRenderer[] lines;
-    private MeshFilter filter;
+    private ViveNavMesh mesh;
 
     void OnGUI()
     {
-        filter = EditorGUILayout.ObjectField(filter, typeof(MeshFilter), true) as MeshFilter;
-        if(GUILayout.Button("Test NavMesh to Mesh"))
-        {
-            Mesh m = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
-            
-            filter.mesh = m;
-        }
+        EditorGUILayout.LabelField("Navmesh Preprocessor for HTC Vive Locomotion", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Adrian Biagioli 2016", EditorStyles.miniLabel);
 
-        ScriptableObject target = this;
-        SerializedObject so = new SerializedObject(target);
-        SerializedProperty linesProperty = so.FindProperty("lines");
-        EditorGUILayout.PropertyField(linesProperty, true);
-        so.ApplyModifiedProperties();
+        EditorGUILayout.LabelField("Before Using", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(
+            "Change your navmesh settings (Window > Navigation) to where you want the player to be able to navigate.  Recommended Settings:\n" +
+            "Agent Radius: 0.25\nAgent Height: 2\nMax Slope: 0\nStep Height: 0\nDrop Height: 0\nJump Distance: 0");
 
-        if (GUILayout.Button("Test Border Edge Finder"))
+        mesh = EditorGUILayout.ObjectField(mesh, typeof(ViveNavMesh), true) as ViveNavMesh;
+        if (GUILayout.Button("Update Navmesh Data"))
         {
-            Mesh m = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
-            Vector3[][] border = FindBorderEdges(m);
-            for(int x=0;x<border.Length;x++)
-            {
-                lines[x].SetVertexCount(border[x].Length);
-                lines[x].SetPositions(border[x]);
-            }
+            mesh.SelectableMesh = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
+            mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
         }
     }
 
