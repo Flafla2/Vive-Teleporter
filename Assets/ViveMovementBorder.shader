@@ -1,11 +1,10 @@
-﻿Shader "Custom/Vive Movement Grid"
+﻿Shader "Custom/Vive Movement Border"
 {
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 		_Color ("Color", Color) = (1, 1, 1, 1)
 		_BackColor ("Color Behind Objects", Color) = (0.5,0.5,0.5,1)
-		_TexScale ("Texture Scale", Float) = 1.0
 	}
 	SubShader
 	{
@@ -20,6 +19,7 @@
 		struct appdata
 		{
 			float4 vertex : POSITION;
+			float2 uv : TEXCOORD0;
 		};
 
 		struct v2f
@@ -29,7 +29,6 @@
 		};
 
 		sampler2D _MainTex;
-		float _TexScale;
 		fixed4 _Color;
 		fixed4 _BackColor;
 
@@ -37,9 +36,7 @@
 		{
 			v2f o;
 			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-
-			float3 worldPos = mul(_Object2World, v.vertex);
-			o.uv = worldPos.xz / _TexScale;
+			o.uv = v.uv;
 			return o;
 		}
 		ENDCG

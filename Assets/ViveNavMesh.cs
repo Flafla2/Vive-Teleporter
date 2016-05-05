@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(BorderRenderer))]
 [ExecuteInEditMode]
@@ -28,35 +28,67 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     private BorderRenderer Border;
 
-	void Start () {
+    private Dictionary<Camera, CommandBuffer> cameras = new Dictionary<Camera, CommandBuffer>();
+
+    void Start () {
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
 
-        UpdateCommandBuffer();
     }
 
-    private void UpdateCommandBuffer()
+    private void Cleanup()
     {
-        if (GroundMaterial != null && _SelectableMesh != null)
+        foreach (var cam in cameras)
         {
-            CommandBuffer buf = new CommandBuffer();
-            buf.DrawMesh(_SelectableMesh, Matrix4x4.identity, GroundMaterial, 0);
-            Camera.current.AddCommandBuffer(CameraEvent.AfterForwardOpaque, buf);
+            if (cam.Key)
+            {
+                cam.Key.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, cam.Value);
+            }
         }
+        cameras.Clear();
     }
 
-    void Update()
+    public void OnEnable()
+    {
+        Cleanup();
+    }
+
+    public void OnDisable()
+    {
+        Cleanup();
+    }
+
+    void OnRenderObject()
     {
         //if (GroundMaterial != null && _SelectableMesh != null)
         //    Graphics.DrawMesh(_SelectableMesh, Matrix4x4.identity, GroundMaterial, 0, null, 0, null, false, false);
+
+        var act = gameObject.activeInHierarchy && enabled;
+        if (!act)
+        {
+            Cleanup();
+            return;
+        }
+
+        var cam = Camera.current;
+        if (!cam)
+            return;
+
+        CommandBuffer buf = null;
+        // Did we already add the command buffer on this camera? Nothing to do then.
+        if (cameras.ContainsKey(cam))
+            return;
+
+        buf = new CommandBuffer();
+        buf.DrawMesh(_SelectableMesh, Matrix4x4.identity, GroundMaterial, 0);
+        cameras[cam] = buf;
+        cam.AddCommandBuffer(CameraEvent.AfterForwardOpaque, buf);
     }
 
     void OnValidate()
     {
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
-
-        UpdateCommandBuffer();
     }
 
     // Casts a ray against the contents of this mesh (in world space)
