@@ -12,7 +12,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     public Mesh SelectableMesh
     {
         get { return _SelectableMesh; }
-        set { _SelectableMesh = value; }
+        set { _SelectableMesh = value; Cleanup(); } // Cleanup because we need to change the mesh inside command buffers
     }
     [SerializeField] [HideInInspector]
     private Mesh _SelectableMesh;
