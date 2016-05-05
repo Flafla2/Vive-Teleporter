@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class ParabolicPointer : MonoBehaviour {
 
@@ -8,9 +8,10 @@ public class ParabolicPointer : MonoBehaviour {
     public int PointCount = 10;
     public float PointSpacing = 0.5f;
     public float GroundHeight = 0;
+    public float GraphicThickness = 0.2f;
+    public Material GraphicMaterial;
 
-    [NonSerialized]
-    public bool Enabled = false;
+    public Vector3 SelectedPoint { get; private set; }
 
     private MeshRenderer Renderer;
     private MeshFilter Filter;
@@ -41,53 +42,145 @@ public class ParabolicPointer : MonoBehaviour {
         return ret;
     }
 
-    private delegate void LineDrawer(Vector3 p1, Vector3 p2);
-
-	private static bool DrawParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, out Vector3 gndHit, LineDrawer draw)
+	private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, List<Vector3> outPts)
     {
+        outPts.Clear();
+        outPts.Add(p0);
+
         Vector3 last = p0;
         float t = 0;
-        for(int i=0; i<points; i++)
+
+        for(int i=0; i< points; i++)
         {
             t += dist / ParabolicCurveDeriv(v0, a, t).magnitude;
             Vector3 next = ParabolicCurve(p0, v0, a, t);
             if (next.y < gnd)
             {
-                gndHit = Vector3.Lerp(last,next,(gnd - last.y)/(next.y - last.y));
-                draw(last, gndHit);
+                outPts.Add(Vector3.Lerp(last, next, (gnd - last.y) / (next.y - last.y)));
                 return true;
-            } else
-                draw(last, next);
+            }
+            else
+                outPts.Add(next);
 
             last = next;
         }
 
-        gndHit = Vector3.zero;
         return false;
+    }
+
+    private void GenerateMesh(ref Mesh m, List<Vector3> points, float uvoffset)
+    {
+        Vector3[] verts = new Vector3[points.Count * 2];
+        Vector2[] uv = new Vector2[points.Count * 2];
+
+        Quaternion r = transform.rotation;
+        float pitch = Mathf.Atan2(2 * r.x * r.w - 2 * r.y * r.z, 1 - 2 * r.x * r.x - 2 * r.z * r.z);
+        float yaw = Mathf.Asin(2 * r.x * r.y + 2 * r.z * r.w);
+        float roll = Mathf.Atan2(2 * r.y * r.w - 2 * r.x * r.z, 1 - 2 * r.y * r.y - 2 * r.z * r.z);
+        r = Quaternion.Euler(-pitch * Mathf.Rad2Deg, -yaw * Mathf.Rad2Deg, 0);
+        Vector3 right = Quaternion.FromToRotation(transform.right, r * Vector3.right) * Vector3.right;
+        for (int x = 0; x < points.Count; x++)
+        {
+            verts[2 * x] = points[x] - right * GraphicThickness / 2;
+            verts[2 * x + 1] = points[x] + right * GraphicThickness / 2;
+
+            uv[2 * x] = new Vector2(0, x - uvoffset);
+            uv[2 * x + 1] = new Vector2(1, x - uvoffset);
+        }
+
+        int[] indices = new int[2 * 3 * (verts.Length - 2)];
+        for (int x = 0; x < verts.Length / 2 - 1; x++)
+        {
+            int p1 = 2 * x;
+            int p2 = 2 * x + 1;
+            int p3 = 2 * x + 2;
+            int p4 = 2 * x + 3;
+
+            indices[12 * x] = p1;
+            indices[12 * x + 1] = p2;
+            indices[12 * x + 2] = p3;
+            indices[12 * x + 3] = p3;
+            indices[12 * x + 4] = p2;
+            indices[12 * x + 5] = p4;
+
+            indices[12 * x + 6] = p3;
+            indices[12 * x + 7] = p2;
+            indices[12 * x + 8] = p1;
+            indices[12 * x + 9] = p4;
+            indices[12 * x + 10] = p2;
+            indices[12 * x + 11] = p3;
+        }
+
+        m.Clear();
+        m.vertices = verts;
+        m.uv = uv;
+        m.triangles = indices;
+        m.RecalculateBounds();
+        m.RecalculateNormals();
     }
 
     void Start() {
         Renderer = GetComponent<MeshRenderer>();
         Filter = GetComponent<MeshFilter>();
 
-        if(!Renderer)
-            Renderer = AddComponent<MeshRenderer>();
+        if (!Renderer)
+            Renderer = gameObject.AddComponent<MeshRenderer>();
         if(!Filter)
-            Filter = AddComponent<MeshFilter>();
+            Filter = gameObject.AddComponent<MeshFilter>();
+
+        Renderer.material = GraphicMaterial;
+
+        ParabolaPoints = new List<Vector3>(PointCount);
+
+        Mesh m = new Mesh();
+        m.MarkDynamic();
+        m.name = "Parabolic Pointer";
+        m.vertices = new Vector3[0];
+        m.triangles = new int[0];
+
+        Filter.mesh = m;
     }
+
+    private List<Vector3> ParabolaPoints;
+
+    void Update()
+    {
+        bool didHit = CalculateParabolicCurve(
+            transform.position,
+            transform.TransformDirection(InitialVelocity),
+            Acceleration, PointSpacing, PointCount,
+            GroundHeight,
+            ParabolaPoints);
+
+        for(int x=0;x<ParabolaPoints.Count;x++)
+            ParabolaPoints[x] = transform.InverseTransformPoint(ParabolaPoints[x]);
+
+        Mesh m = Filter.mesh;
+        GenerateMesh(ref m, ParabolaPoints, Time.time % 1);
+    }
+
+#if UNITY_EDITOR
+    private List<Vector3> ParabolaPoints_Gizmo;
 
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.blue;
-        Vector3 hit;
-        DrawParabolicCurve(
+        if (ParabolaPoints_Gizmo == null)
+            ParabolaPoints_Gizmo = new List<Vector3>(PointCount);
+
+        bool didHit = CalculateParabolicCurve(
             transform.position, 
             transform.TransformDirection(InitialVelocity), 
             Acceleration, PointSpacing, PointCount, 
             GroundHeight,
-            out hit,
-            Gizmos.DrawLine);
+            ParabolaPoints_Gizmo);
+
+        Gizmos.color = Color.blue;
+        for (int x = 0; x < ParabolaPoints_Gizmo.Count - 1; x++)
+            Gizmos.DrawLine(ParabolaPoints_Gizmo[x], ParabolaPoints_Gizmo[x + 1]);
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(hit, 0.2f);
+
+        if(didHit)
+            Gizmos.DrawSphere(ParabolaPoints_Gizmo[ParabolaPoints_Gizmo.Count-1], 0.2f);
     }
+#endif
 }
