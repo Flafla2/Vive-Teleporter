@@ -10,6 +10,7 @@ public class ParabolicPointer : MonoBehaviour {
     public float GroundHeight = 0;
     public float GraphicThickness = 0.2f;
     public Material GraphicMaterial;
+    public MeshRenderer SelectionPad; 
 
     public Vector3 SelectedPoint { get; private set; }
 
@@ -85,8 +86,15 @@ public class ParabolicPointer : MonoBehaviour {
             verts[2 * x] = points[x] - right * GraphicThickness / 2;
             verts[2 * x + 1] = points[x] + right * GraphicThickness / 2;
 
-            uv[2 * x] = new Vector2(0, x - uvoffset);
-            uv[2 * x + 1] = new Vector2(1, x - uvoffset);
+            float uvoffset_mod = uvoffset;
+            if(x == points.Count - 1 && x > 1) {
+                float dist_last = (points[x-2] - points[x-1]).magnitude;
+                float dist_cur = (points[x] - points[x-1]).magnitude;
+                uvoffset_mod -= dist_cur / dist_last;
+            }
+
+            uv[2 * x] = new Vector2(0, x - uvoffset_mod);
+            uv[2 * x + 1] = new Vector2(1, x - uvoffset_mod);
         }
 
         for(int x=0;x<verts.Length;x++)
@@ -159,6 +167,14 @@ public class ParabolicPointer : MonoBehaviour {
             Acceleration, PointSpacing, PointCount,
             GroundHeight,
             ParabolaPoints);
+
+        SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
+
+        if(SelectionPad != null) {
+            SelectionPad.enabled = didHit;
+            SelectionPad.transform.position = SelectedPoint + Vector3.up * 0.05f;
+            SelectionPad.transform.rotation = Quaternion.identity;
+        }
 
         Mesh m = Filter.mesh;
         GenerateMesh(ref m, ParabolaPoints, velocity, Time.time % 1);
