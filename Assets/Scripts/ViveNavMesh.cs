@@ -33,7 +33,6 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     void Start () {
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
-
     }
 
     private void Cleanup()

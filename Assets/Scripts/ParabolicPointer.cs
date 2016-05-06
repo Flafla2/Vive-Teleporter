@@ -13,6 +13,8 @@ public class ParabolicPointer : MonoBehaviour {
     public MeshRenderer SelectionPad; 
 
     public Vector3 SelectedPoint { get; private set; }
+    public bool PointOnNavMesh { get; private set; }
+    public ViveNavMesh NavMesh;
 
     private MeshRenderer Renderer;
     private MeshFilter Filter;
@@ -90,7 +92,7 @@ public class ParabolicPointer : MonoBehaviour {
             if(x == points.Count - 1 && x > 1) {
                 float dist_last = (points[x-2] - points[x-1]).magnitude;
                 float dist_cur = (points[x] - points[x-1]).magnitude;
-                uvoffset_mod -= dist_cur / dist_last;
+                uvoffset_mod += 1 - dist_cur / dist_last;
             }
 
             uv[2 * x] = new Vector2(0, x - uvoffset_mod);
@@ -170,8 +172,16 @@ public class ParabolicPointer : MonoBehaviour {
 
         SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
 
+        PointOnNavMesh = true;
+        if(NavMesh != null)
+        {
+            Vector3 rayorigin = SelectedPoint;
+            rayorigin.y = GroundHeight + 1;
+            PointOnNavMesh = NavMesh.Raycast(new Ray(rayorigin, Vector3.down)) > 0;
+        }
+
         if(SelectionPad != null) {
-            SelectionPad.enabled = didHit;
+            SelectionPad.enabled = didHit && PointOnNavMesh;
             SelectionPad.transform.position = SelectedPoint + Vector3.up * 0.05f;
             SelectionPad.transform.rotation = Quaternion.identity;
         }
