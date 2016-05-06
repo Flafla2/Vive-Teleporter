@@ -42,7 +42,7 @@ public class ParabolicPointer : MonoBehaviour {
         return ret;
     }
 
-	private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, List<Vector3> outPts)
+    private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, List<Vector3> outPts)
     {
         outPts.Clear();
         outPts.Add(p0);
@@ -68,17 +68,18 @@ public class ParabolicPointer : MonoBehaviour {
         return false;
     }
 
-    private void GenerateMesh(ref Mesh m, List<Vector3> points, float uvoffset)
+    private static Vector3 ProjectVectorOntoPlane(Vector3 planeNormal, Vector3 point) {
+        Vector3 d = Vector3.Project(point, planeNormal.normalized);
+        return point - d;
+    }
+
+    private void GenerateMesh(ref Mesh m, List<Vector3> points, Vector3 fwd, float uvoffset)
     {
         Vector3[] verts = new Vector3[points.Count * 2];
         Vector2[] uv = new Vector2[points.Count * 2];
 
-        Quaternion r = transform.rotation;
-        float pitch = Mathf.Atan2(2 * r.x * r.w - 2 * r.y * r.z, 1 - 2 * r.x * r.x - 2 * r.z * r.z);
-        float yaw = Mathf.Asin(2 * r.x * r.y + 2 * r.z * r.w);
-        float roll = Mathf.Atan2(2 * r.y * r.w - 2 * r.x * r.z, 1 - 2 * r.y * r.y - 2 * r.z * r.z);
-        r = Quaternion.Euler(-pitch * Mathf.Rad2Deg, -yaw * Mathf.Rad2Deg, 0);
-        Vector3 right = Quaternion.FromToRotation(transform.right, r * Vector3.right) * Vector3.right;
+        Vector3 right = Vector3.Cross(fwd, Vector3.up).normalized;
+
         for (int x = 0; x < points.Count; x++)
         {
             verts[2 * x] = points[x] - right * GraphicThickness / 2;
@@ -87,6 +88,9 @@ public class ParabolicPointer : MonoBehaviour {
             uv[2 * x] = new Vector2(0, x - uvoffset);
             uv[2 * x + 1] = new Vector2(1, x - uvoffset);
         }
+
+        for(int x=0;x<verts.Length;x++)
+            verts[x] = transform.InverseTransformPoint(verts[x]);
 
         int[] indices = new int[2 * 3 * (verts.Length - 2)];
         for (int x = 0; x < verts.Length / 2 - 1; x++)
@@ -145,18 +149,34 @@ public class ParabolicPointer : MonoBehaviour {
 
     void Update()
     {
+        Vector3 velocity = transform.TransformDirection(InitialVelocity);
+        Vector3 velocity_normalized;
+        ClampInitialVelocity(ref velocity, out velocity_normalized);
+
         bool didHit = CalculateParabolicCurve(
             transform.position,
-            transform.TransformDirection(InitialVelocity),
+            velocity,
             Acceleration, PointSpacing, PointCount,
             GroundHeight,
             ParabolaPoints);
 
-        for(int x=0;x<ParabolaPoints.Count;x++)
-            ParabolaPoints[x] = transform.InverseTransformPoint(ParabolaPoints[x]);
-
         Mesh m = Filter.mesh;
-        GenerateMesh(ref m, ParabolaPoints, Time.time % 1);
+        GenerateMesh(ref m, ParabolaPoints, velocity, Time.time % 1);
+    }
+
+    // Clamps the given velocity vector so that it can't be more than 45 degrees above the vertical.
+    // This is done so that it is easier to leverage the maximum distance (at the 45 degree angle) of
+    // parabolic motion.
+    private void ClampInitialVelocity(ref Vector3 velocity, out Vector3 velocity_normalized) {
+        Vector3 velocity_fwd = ProjectVectorOntoPlane(Vector3.up, velocity);
+        float angle = Vector3.Angle(velocity_fwd, velocity);
+        if(angle > 45) {
+            velocity = Vector3.Slerp(velocity_fwd, velocity, 45f / angle);
+            velocity /= velocity.magnitude;
+            velocity_normalized = velocity;
+            velocity *= InitialVelocity.magnitude;
+        } else
+            velocity_normalized = velocity.normalized;
     }
 
 #if UNITY_EDITOR
@@ -167,9 +187,13 @@ public class ParabolicPointer : MonoBehaviour {
         if (ParabolaPoints_Gizmo == null)
             ParabolaPoints_Gizmo = new List<Vector3>(PointCount);
 
+        Vector3 velocity = transform.TransformDirection(InitialVelocity);
+        Vector3 velocity_normalized;
+        ClampInitialVelocity(ref velocity, out velocity_normalized);
+
         bool didHit = CalculateParabolicCurve(
             transform.position, 
-            transform.TransformDirection(InitialVelocity), 
+            velocity, 
             Acceleration, PointSpacing, PointCount, 
             GroundHeight,
             ParabolaPoints_Gizmo);
