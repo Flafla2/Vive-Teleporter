@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
-using System;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(BorderRenderer))]
@@ -70,7 +69,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         }
 
         var cam = Camera.current;
-        if (!cam)
+        if (!cam || cam.cameraType == CameraType.Preview)
             return;
 
         CommandBuffer buf = null;

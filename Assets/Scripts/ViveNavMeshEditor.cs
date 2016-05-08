@@ -3,33 +3,35 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 
-public class ViveNavmeshWindow : EditorWindow {
+[CustomEditor(typeof(ViveNavMesh))]
+public class ViveNavMeshEditor : Editor {
 
-    [MenuItem("Window/Vive Navmesh Generator")]
-    static void Init()
+    public override void OnInspectorGUI()
     {
-        ViveNavmeshWindow window = EditorWindow.GetWindow(typeof(ViveNavmeshWindow), false, "Vive Navmesh Preprocessor") as ViveNavmeshWindow;
-        window.Show();
-    }
+        GUIStyle bold_wrap = EditorStyles.boldLabel;
+        bold_wrap.wordWrap = true;
+        GUILayout.Label("Navmesh Preprocessor for HTC Vive Locomotion", bold_wrap);
+        GUILayout.Label("Adrian Biagioli 2016", EditorStyles.miniLabel);
 
-    private ViveNavMesh mesh;
+        GUILayout.Label("Before Using", bold_wrap);
+        GUIStyle wrap = EditorStyles.label;
+        wrap.wordWrap = true;
+        GUILayout.Label(
+            "Change your navmesh settings (Window > Navigation) to where you want the player to be able to navigate and bake the navmesh.  "+
+            "Then click \"Update Navmesh Data\" below.  You may change the navigation settings back and rebake after you have updated.\n\nRecommended Settings:\n" +
+            "Agent Radius: 0.25\nAgent Height: 2\nMax Slope: 0\nStep Height: 0\nDrop Height: 0\nJump Distance: 0\n",
+            wrap);
 
-    void OnGUI()
-    {
-        EditorGUILayout.LabelField("Navmesh Preprocessor for HTC Vive Locomotion", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField("Adrian Biagioli 2016", EditorStyles.miniLabel);
+        ViveNavMesh mesh = (ViveNavMesh)target;
 
-        EditorGUILayout.LabelField("Before Using", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField(
-            "Change your navmesh settings (Window > Navigation) to where you want the player to be able to navigate.  Recommended Settings:\n" +
-            "Agent Radius: 0.25\nAgent Height: 2\nMax Slope: 0\nStep Height: 0\nDrop Height: 0\nJump Distance: 0");
-
-        mesh = EditorGUILayout.ObjectField(mesh, typeof(ViveNavMesh), true) as ViveNavMesh;
         if (GUILayout.Button("Update Navmesh Data"))
         {
             mesh.SelectableMesh = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
             mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
         }
+
+        EditorGUILayout.LabelField("Render Settings", EditorStyles.boldLabel);
+        mesh.GroundMaterial = (Material)EditorGUILayout.ObjectField("Ground Material", mesh.GroundMaterial, typeof(Material), false);
     }
 
     // Converts a NavMesh (or a NavMesh area) into a standard Unity mesh.  This is later used
