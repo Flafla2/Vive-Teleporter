@@ -210,6 +210,9 @@ public class ParabolicPointer : MonoBehaviour {
 
     void OnDrawGizmos()
     {
+        if (Application.isPlaying)
+            return;
+
         if (ParabolaPoints_Gizmo == null)
             ParabolaPoints_Gizmo = new List<Vector3>(PointCount);
 
