@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Fade
+  m_Name: Fade Inner
   m_Shader: {fileID: 4800000, guid: 18f009343c2ca574a83a6413c38bae08, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
@@ -143,4 +143,4 @@ Material:
       data:
         first:
           name: _BackColor
-        second: {r: 0.9098039, g: 0.6117647, b: 0.16470584, a: 0.216}
+        second: {r: 0.9098039, g: 0.6117647, b: 0.16470589, a: 0.591}

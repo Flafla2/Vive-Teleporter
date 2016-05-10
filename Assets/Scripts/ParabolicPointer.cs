@@ -3,21 +3,26 @@ using System.Collections.Generic;
 
 public class ParabolicPointer : MonoBehaviour {
 
+    public ViveNavMesh NavMesh;
+    [Header("Parabola Trajectory")]
     public Vector3 InitialVelocity = Vector3.forward * 10f;
     public Vector3 Acceleration = Vector3.up * -9.8f;
+    [Header("Parabola Mesh Properties")]
     public int PointCount = 10;
     public float PointSpacing = 0.5f;
     public float GroundHeight = 0;
     public float GraphicThickness = 0.2f;
     public Material GraphicMaterial;
-    public MeshRenderer SelectionPad; 
+    [Header("Selection Pad Properties")]
+    public Mesh SelectionPadMesh;
+    public Material SelectionPadFadeMaterial;
+    public Material SelectionPadCircleMaterial;
+    public Material SelectionPadBottomMaterial;
 
     public Vector3 SelectedPoint { get; private set; }
     public bool PointOnNavMesh { get; private set; }
-    public ViveNavMesh NavMesh;
 
-    private MeshRenderer Renderer;
-    private MeshFilter Filter;
+    private Mesh ParabolaMesh;
 
     private static float ParabolicCurve(float p0, float v0, float a, float t)
     {
@@ -99,8 +104,8 @@ public class ParabolicPointer : MonoBehaviour {
             uv[2 * x + 1] = new Vector2(1, x - uvoffset_mod);
         }
 
-        for(int x=0;x<verts.Length;x++)
-            verts[x] = transform.InverseTransformPoint(verts[x]);
+        //for(int x=0;x<verts.Length;x++)
+        //    verts[x] = transform.InverseTransformPoint(verts[x]);
 
         int[] indices = new int[2 * 3 * (verts.Length - 2)];
         for (int x = 0; x < verts.Length / 2 - 1; x++)
@@ -134,25 +139,13 @@ public class ParabolicPointer : MonoBehaviour {
     }
 
     void Start() {
-        Renderer = GetComponent<MeshRenderer>();
-        Filter = GetComponent<MeshFilter>();
-
-        if (!Renderer)
-            Renderer = gameObject.AddComponent<MeshRenderer>();
-        if(!Filter)
-            Filter = gameObject.AddComponent<MeshFilter>();
-
-        Renderer.material = GraphicMaterial;
-
         ParabolaPoints = new List<Vector3>(PointCount);
 
-        Mesh m = new Mesh();
-        m.MarkDynamic();
-        m.name = "Parabolic Pointer";
-        m.vertices = new Vector3[0];
-        m.triangles = new int[0];
-
-        Filter.mesh = m;
+        ParabolaMesh = new Mesh();
+        ParabolaMesh.MarkDynamic();
+        ParabolaMesh.name = "Parabolic Pointer";
+        ParabolaMesh.vertices = new Vector3[0];
+        ParabolaMesh.triangles = new int[0];
     }
 
     private List<Vector3> ParabolaPoints;
@@ -180,14 +173,22 @@ public class ParabolicPointer : MonoBehaviour {
             PointOnNavMesh = NavMesh.Raycast(new Ray(rayorigin, Vector3.down)) > 0;
         }
 
-        if(SelectionPad != null) {
-            SelectionPad.enabled = didHit && PointOnNavMesh;
-            SelectionPad.transform.position = SelectedPoint + Vector3.up * 0.05f;
-            SelectionPad.transform.rotation = Quaternion.identity;
+        bool ShouldDrawMarker = PointOnNavMesh && SelectionPadMesh != null
+            && SelectionPadFadeMaterial != null && SelectionPadBottomMaterial != null && SelectionPadCircleMaterial != null;
+
+        if (ShouldDrawMarker)
+        {
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 3);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadCircleMaterial, 0, null, 1);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadBottomMaterial, 0, null, 2);
         }
 
-        Mesh m = Filter.mesh;
-        GenerateMesh(ref m, ParabolaPoints, velocity, Time.time % 1);
+        GenerateMesh(ref ParabolaMesh, ParabolaPoints, velocity, Time.time % 1);
+
+        Graphics.DrawMesh(ParabolaMesh, Matrix4x4.identity, GraphicMaterial, 0);
+
+        if (ShouldDrawMarker)
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 0);
     }
 
     // Clamps the given velocity vector so that it can't be more than 45 degrees above the vertical.
