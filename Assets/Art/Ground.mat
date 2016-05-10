@@ -143,4 +143,4 @@ Material:
       data:
         first:
           name: _BackColor
-        second: {r: 0.7681661, g: 0.90513265, b: 0.9411765, a: 0.303}
+        second: {r: 0.7681661, g: 0.90513265, b: 0.9411765, a: 0.184}

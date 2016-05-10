@@ -78,7 +78,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             return;
 
         buf = new CommandBuffer();
-        buf.DrawMesh(_SelectableMesh, Matrix4x4.identity, GroundMaterial, 0);
+        buf.DrawMesh(_SelectableMesh, Matrix4x4.TRS(Vector3.up * 0.05f, Quaternion.identity, Vector3.one), GroundMaterial, 0);
         cameras[cam] = buf;
         cam.AddCommandBuffer(CameraEvent.AfterForwardOpaque, buf);
     }
