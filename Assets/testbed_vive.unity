@@ -928,21 +928,6 @@ Transform:
 GameObject:
   m_PrefabParentObject: {fileID: 189822, guid: 4d293c8e162f3874b982baadd71153d2, type: 2}
   m_PrefabInternal: {fileID: 304986436}
---- !u!114 &1012858797
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1012858796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bca9ccf900ccc84c887d783321d27e2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _head: {fileID: 154042613}
-  _ears: {fileID: 144652751}
-  wireframe: 0
-  flip: {fileID: 1012858799}
 --- !u!114 &1012858798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -958,7 +943,7 @@ MonoBehaviour:
   OriginTransform: {fileID: 1611824065}
   CameraTransform: {fileID: 154042613}
   TeleportFadeDuration: 0.2
-  FadeMaterial: {fileID: 0}
+  FadeMaterial: {fileID: 2100000, guid: 5ba70d58d085f2b44b315edf2d739376, type: 2}
   Controllers:
   - {fileID: 1426292698}
   - {fileID: 1478648218}
@@ -973,6 +958,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5be45115742b07478e21c85fcc233ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1012858801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1012858796}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bca9ccf900ccc84c887d783321d27e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _head: {fileID: 154042613}
+  _ears: {fileID: 144652751}
+  wireframe: 0
+  flip: {fileID: 1012858799}
 --- !u!114 &1426292698 stripped
 MonoBehaviour:
   m_PrefabParentObject: {fileID: 11411726, guid: 4d293c8e162f3874b982baadd71153d2,
