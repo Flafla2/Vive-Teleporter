@@ -6,6 +6,9 @@ public class BorderRenderer : MonoBehaviour {
     private Mesh[] CachedMeshes;
     public Material BorderMaterial;
 
+    [System.NonSerialized]
+    public Matrix4x4 Transpose = Matrix4x4.identity;
+
     [SerializeField] [Range(0,1)]
     public float BorderAlpha = 1.0f;
     private float LastBorderAlpha = 1.0f;
@@ -52,7 +55,7 @@ public class BorderRenderer : MonoBehaviour {
         }
 
         foreach (Mesh m in CachedMeshes)
-            Graphics.DrawMesh(m, Matrix4x4.identity, BorderMaterial, 0, null, 0, null, false, false);
+            Graphics.DrawMesh(m, Transpose, BorderMaterial, 0, null, 0, null, false, false);
     }
 
     void OnValidate()
@@ -61,7 +64,8 @@ public class BorderRenderer : MonoBehaviour {
 
         if (AlphaShaderID == -1)
             AlphaShaderID = Shader.PropertyToID("_Alpha");
-        BorderMaterial.SetFloat(AlphaShaderID, BorderAlpha);
+        if(BorderMaterial != null)
+            BorderMaterial.SetFloat(AlphaShaderID, BorderAlpha);
     }
 
     public void RegenerateMesh()

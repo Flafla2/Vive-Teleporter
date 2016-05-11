@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+using Valve.VR;
 
-[RequireComponent(typeof(Camera))]
+[RequireComponent(typeof(Camera), typeof(BorderRenderer))]
 public class TeleportVive : MonoBehaviour {
 
     public ParabolicPointer Pointer;
@@ -10,7 +11,8 @@ public class TeleportVive : MonoBehaviour {
     public float TeleportFadeDuration = 0.2f;
 
     public ViveNavMesh Navmesh;
-    public BorderRenderer Border;
+    private BorderRenderer NavmeshBorder;
+    private BorderRenderer RoomBorder;
 
     [SerializeField]
     private Animator NavmeshAnimator;
@@ -29,6 +31,8 @@ public class TeleportVive : MonoBehaviour {
 
     private Mesh PlaneMesh;
     private Camera cam;
+
+    private Vector3 PlayAreaSize;
 
     void Start()
     {
@@ -50,8 +54,62 @@ public class TeleportVive : MonoBehaviour {
         cam = GetComponent<Camera>();
 
         MaterialFadeID = Shader.PropertyToID("_Fade");
-
         EnabledAnimatorID = Animator.StringToHash("Enabled");
+
+        NavmeshBorder = Navmesh.GetComponent<BorderRenderer>();
+        RoomBorder = GetComponent<BorderRenderer>();
+        RoomBorder.enabled = false;
+
+        HmdQuad_t pRect = new HmdQuad_t();
+        if (SteamVR_PlayArea.GetBounds(SteamVR_PlayArea.Size.Calibrated, ref pRect))
+        {
+            float minx = Mathf.Min(
+                pRect.vCorners0.v0,
+                pRect.vCorners1.v0,
+                pRect.vCorners2.v0,
+                pRect.vCorners3.v0);
+            float maxx = Mathf.Max(
+                pRect.vCorners0.v0,
+                pRect.vCorners1.v0,
+                pRect.vCorners2.v0,
+                pRect.vCorners3.v0);
+            float miny = Mathf.Min(
+                pRect.vCorners0.v1,
+                pRect.vCorners1.v1,
+                pRect.vCorners2.v1,
+                pRect.vCorners3.v1);
+            float maxy = Mathf.Max(
+                pRect.vCorners0.v1,
+                pRect.vCorners1.v1,
+                pRect.vCorners2.v1,
+                pRect.vCorners3.v1);
+            float minz = Mathf.Min(
+                pRect.vCorners0.v2,
+                pRect.vCorners1.v2,
+                pRect.vCorners2.v2,
+                pRect.vCorners3.v2);
+            float maxz = Mathf.Max(
+                pRect.vCorners0.v2,
+                pRect.vCorners1.v2,
+                pRect.vCorners2.v2,
+                pRect.vCorners3.v2);
+
+            PlayAreaSize = new Vector3(maxx - minx, maxy - miny, maxz - minz);
+
+            Vector3 h = PlayAreaSize / 2;
+            RoomBorder.Points = new Vector3[][]
+            {
+                new Vector3[] {
+                    new Vector3(h.x, 0, h.z),
+                    new Vector3(h.x, 0, -h.z),
+                    new Vector3(-h.x, 0, -h.z),
+                    new Vector3(-h.x, 0, h.z),
+                    new Vector3(h.x, 0, h.z)
+                }
+            };
+        }
+            
+
     }
 
     void OnPostRender()
@@ -106,6 +164,7 @@ public class TeleportVive : MonoBehaviour {
                 
                 ActiveController = null;
                 Pointer.enabled = false;
+                RoomBorder.enabled = false;
                 if (NavmeshAnimator != null)
                     NavmeshAnimator.SetBool(EnabledAnimatorID, false);
 
@@ -113,6 +172,12 @@ public class TeleportVive : MonoBehaviour {
                 Pointer.transform.position = Vector3.zero;
                 Pointer.transform.rotation = Quaternion.identity;
                 Pointer.transform.localScale = Vector3.one;
+            } else
+            {
+                Vector3 offset = CameraTransform.position - OriginTransform.position;
+                offset.y = 0;
+                
+                RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, OriginTransform.rotation, Vector3.one);
             }
         } else
         {
@@ -132,6 +197,7 @@ public class TeleportVive : MonoBehaviour {
                     Pointer.transform.localRotation = Quaternion.identity;
                     Pointer.transform.localScale = Vector3.one;
                     Pointer.enabled = true;
+                    RoomBorder.enabled = true;
                     if(NavmeshAnimator != null)
                         NavmeshAnimator.SetBool(EnabledAnimatorID, true);
                 }
