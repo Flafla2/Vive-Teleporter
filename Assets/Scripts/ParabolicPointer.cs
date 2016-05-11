@@ -170,7 +170,11 @@ public class ParabolicPointer : MonoBehaviour {
         {
             Vector3 rayorigin = SelectedPoint;
             rayorigin.y = GroundHeight + 1;
-            PointOnNavMesh = NavMesh.Raycast(new Ray(rayorigin, Vector3.down)) > 0;
+            float cast = NavMesh.Raycast(new Ray(rayorigin, Vector3.down));
+
+            PointOnNavMesh = cast > 0;
+            if(PointOnNavMesh)
+                SelectedPoint = rayorigin + Vector3.down * cast;
         }
 
         bool ShouldDrawMarker = PointOnNavMesh && SelectionPadMesh != null
