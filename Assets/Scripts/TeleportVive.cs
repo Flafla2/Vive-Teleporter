@@ -32,8 +32,6 @@ public class TeleportVive : MonoBehaviour {
     private Mesh PlaneMesh;
     private Camera cam;
 
-    private Vector3 PlayAreaSize;
-
     void Start()
     {
         Pointer.enabled = false;
@@ -60,51 +58,21 @@ public class TeleportVive : MonoBehaviour {
         RoomBorder = GetComponent<BorderRenderer>();
         RoomBorder.enabled = false;
 
-        HmdQuad_t pRect = new HmdQuad_t();
-        if (SteamVR_PlayArea.GetBounds(SteamVR_PlayArea.Size.Calibrated, ref pRect))
+        float w = 0;
+        float h = 0;
+
+        if (GetSoftBounds(ref w, ref h))
         {
-            float minx = Mathf.Min(
-                pRect.vCorners0.v0,
-                pRect.vCorners1.v0,
-                pRect.vCorners2.v0,
-                pRect.vCorners3.v0);
-            float maxx = Mathf.Max(
-                pRect.vCorners0.v0,
-                pRect.vCorners1.v0,
-                pRect.vCorners2.v0,
-                pRect.vCorners3.v0);
-            float miny = Mathf.Min(
-                pRect.vCorners0.v1,
-                pRect.vCorners1.v1,
-                pRect.vCorners2.v1,
-                pRect.vCorners3.v1);
-            float maxy = Mathf.Max(
-                pRect.vCorners0.v1,
-                pRect.vCorners1.v1,
-                pRect.vCorners2.v1,
-                pRect.vCorners3.v1);
-            float minz = Mathf.Min(
-                pRect.vCorners0.v2,
-                pRect.vCorners1.v2,
-                pRect.vCorners2.v2,
-                pRect.vCorners3.v2);
-            float maxz = Mathf.Max(
-                pRect.vCorners0.v2,
-                pRect.vCorners1.v2,
-                pRect.vCorners2.v2,
-                pRect.vCorners3.v2);
-
-            PlayAreaSize = new Vector3(maxx - minx, maxy - miny, maxz - minz);
-
-            Vector3 h = PlayAreaSize / 2;
+            w /= 2;
+            h /= 2;
             RoomBorder.Points = new Vector3[][]
             {
                 new Vector3[] {
-                    new Vector3(h.x, 0, h.z),
-                    new Vector3(h.x, 0, -h.z),
-                    new Vector3(-h.x, 0, -h.z),
-                    new Vector3(-h.x, 0, h.z),
-                    new Vector3(h.x, 0, h.z)
+                    new Vector3(w, 0, h),
+                    new Vector3(w, 0, -h),
+                    new Vector3(-w, 0, -h),
+                    new Vector3(-w, 0, h),
+                    new Vector3(w, 0, h)
                 }
             };
         }
@@ -112,7 +80,27 @@ public class TeleportVive : MonoBehaviour {
 
     }
 
-    void OnPostRender()
+    public static bool GetSoftBounds(ref float width, ref float height)
+    {
+        var initOpenVR = (!SteamVR.active && !SteamVR.usingNativeSupport);
+        if (initOpenVR)
+        {
+            var error = EVRInitError.None;
+            OpenVR.Init(ref error, EVRApplicationType.VRApplication_Other);
+        }
+
+        var chaperone = OpenVR.Chaperone;
+        bool success = (chaperone != null) && chaperone.GetPlayAreaSize(ref width, ref height);
+        if (!success)
+            Debug.LogWarning("Failed to get Calibrated Play Area bounds!  Make sure you have tracking first, and that your space is calibrated.");
+
+        if (initOpenVR)
+            OpenVR.Shutdown();
+
+        return success;
+    }
+
+        void OnPostRender()
     {
         if(Teleporting)
         {
@@ -176,8 +164,8 @@ public class TeleportVive : MonoBehaviour {
             {
                 Vector3 offset = CameraTransform.position - OriginTransform.position;
                 offset.y = 0;
-                
-                RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, OriginTransform.rotation, Vector3.one);
+
+                RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, Quaternion.identity, Vector3.one);
             }
         } else
         {
