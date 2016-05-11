@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Fade Outer
+  m_Name: Room Area Border
   m_Shader: {fileID: 4800000, guid: 18f009343c2ca574a83a6413c38bae08, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
@@ -131,6 +131,10 @@ Material:
         first:
           name: _TexScale
         second: 1
+      data:
+        first:
+          name: _Alpha
+        second: 1
     m_Colors:
       data:
         first:
@@ -139,8 +143,8 @@ Material:
       data:
         first:
           name: _Color
-        second: {r: 0.9117647, g: 0.61410034, b: 0.1676038, a: 0.934}
+        second: {r: 0.5363322, g: 0.8340889, b: 0.9117647, a: 0.791}
       data:
         first:
           name: _BackColor
-        second: {r: 0.9098039, g: 0.6117647, b: 0.16470589, a: 0.591}
+        second: {r: 0.7681661, g: 0.90513265, b: 0.9411765, a: 0.172}

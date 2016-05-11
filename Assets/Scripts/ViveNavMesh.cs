@@ -6,7 +6,24 @@ using System.Collections.Generic;
 [ExecuteInEditMode]
 public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 {
-    public Material GroundMaterial;
+    public Material GroundMaterial
+    {
+        get { return _GroundMaterial; }
+        set
+        {
+            Material old = _GroundMaterial;
+            _GroundMaterial = value;
+            _GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
+            if (old != _GroundMaterial)
+                Cleanup();
+        }
+    }
+    [SerializeField]
+    private Material _GroundMaterial;
+
+    public float GroundAlpha = 1.0f;
+    private float LastGroundAlpha = 1.0f;
+    private int AlphaShaderID = -1;
 
     public Mesh SelectableMesh
     {
@@ -32,6 +49,17 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     void Start () {
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
+
+        AlphaShaderID = Shader.PropertyToID("_Alpha");
+    }
+
+    void Update ()
+    {
+        if (GroundAlpha != LastGroundAlpha && GroundMaterial != null)
+        {
+            GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
+            LastGroundAlpha = GroundAlpha;
+        }
     }
 
     private void Cleanup()
@@ -58,9 +86,6 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     void OnRenderObject()
     {
-        //if (GroundMaterial != null && _SelectableMesh != null)
-        //    Graphics.DrawMesh(_SelectableMesh, Matrix4x4.identity, GroundMaterial, 0, null, 0, null, false, false);
-
         var act = gameObject.activeInHierarchy && enabled;
         if (!act)
         {
@@ -73,12 +98,12 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             return;
 
         CommandBuffer buf = null;
-        // Did we already add the command buffer on this camera? Nothing to do then.
         if (cameras.ContainsKey(cam))
             return;
 
         buf = new CommandBuffer();
-        buf.DrawMesh(_SelectableMesh, Matrix4x4.TRS(Vector3.up * 0.05f, Quaternion.identity, Vector3.one), GroundMaterial, 0);
+        // Note: Mesh is drawn slightly pushed upwards to avoid z-fighting issues
+        buf.DrawMesh(_SelectableMesh, Matrix4x4.TRS(Vector3.up * 0.005f, Quaternion.identity, Vector3.one), GroundMaterial, 0);
         cameras[cam] = buf;
         cam.AddCommandBuffer(CameraEvent.AfterForwardOpaque, buf);
     }
@@ -87,6 +112,9 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     {
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
+
+        if(AlphaShaderID == -1)
+            AlphaShaderID = Shader.PropertyToID("_Alpha");
     }
 
     // Casts a ray against the contents of this mesh (in world space)

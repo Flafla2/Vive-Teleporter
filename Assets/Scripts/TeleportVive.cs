@@ -9,6 +9,13 @@ public class TeleportVive : MonoBehaviour {
 
     public float TeleportFadeDuration = 0.2f;
 
+    public ViveNavMesh Navmesh;
+    public BorderRenderer Border;
+
+    [SerializeField]
+    private Animator NavmeshAnimator;
+    private int EnabledAnimatorID;
+
     public Material FadeMaterial;
     private int MaterialFadeID;
 
@@ -43,6 +50,8 @@ public class TeleportVive : MonoBehaviour {
         cam = GetComponent<Camera>();
 
         MaterialFadeID = Shader.PropertyToID("_Fade");
+
+        EnabledAnimatorID = Animator.StringToHash("Enabled");
     }
 
     void OnPostRender()
@@ -97,6 +106,8 @@ public class TeleportVive : MonoBehaviour {
                 
                 ActiveController = null;
                 Pointer.enabled = false;
+                if (NavmeshAnimator != null)
+                    NavmeshAnimator.SetBool(EnabledAnimatorID, false);
 
                 Pointer.transform.parent = null;
                 Pointer.transform.position = Vector3.zero;
@@ -121,6 +132,8 @@ public class TeleportVive : MonoBehaviour {
                     Pointer.transform.localRotation = Quaternion.identity;
                     Pointer.transform.localScale = Vector3.one;
                     Pointer.enabled = true;
+                    if(NavmeshAnimator != null)
+                        NavmeshAnimator.SetBool(EnabledAnimatorID, true);
                 }
             }
         }

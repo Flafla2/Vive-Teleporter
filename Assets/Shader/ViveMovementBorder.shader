@@ -5,6 +5,7 @@
 		_MainTex ("Texture", 2D) = "white" {}
 		_Color ("Color", Color) = (1, 1, 1, 1)
 		_BackColor ("Color Behind Objects", Color) = (0.5,0.5,0.5,1)
+		_Alpha ("Total Alpha (Transparency)", Float) = 1.0
 	}
 	SubShader
 	{
@@ -31,6 +32,7 @@
 		sampler2D _MainTex;
 		fixed4 _Color;
 		fixed4 _BackColor;
+		fixed _Alpha;
 
 		v2f vert(appdata v)
 		{
@@ -51,6 +53,7 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 col = tex2D(_MainTex, i.uv) * _BackColor;
+				col.a *= _Alpha;
 				return col;
 			}
 			ENDCG
@@ -66,6 +69,7 @@
 			fixed4 frag(v2f i) : SV_Target
 			{
 				fixed4 col = tex2D(_MainTex, i.uv) * _Color;
+				col.a *= _Alpha;
 				return col;
 			}
 			ENDCG

@@ -32,6 +32,7 @@ public class ViveNavMeshEditor : Editor {
 
         EditorGUILayout.LabelField("Render Settings", EditorStyles.boldLabel);
         mesh.GroundMaterial = (Material)EditorGUILayout.ObjectField("Ground Material", mesh.GroundMaterial, typeof(Material), false);
+        mesh.GroundAlpha = EditorGUILayout.Slider("Ground Alpha", mesh.GroundAlpha, 0, 1);
     }
 
     // Converts a NavMesh (or a NavMesh area) into a standard Unity mesh.  This is later used

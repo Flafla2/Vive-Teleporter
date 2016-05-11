@@ -6,6 +6,12 @@ public class BorderRenderer : MonoBehaviour {
     private Mesh[] CachedMeshes;
     public Material BorderMaterial;
 
+    [SerializeField] [Range(0,1)]
+    public float BorderAlpha = 1.0f;
+    private float LastBorderAlpha = 1.0f;
+
+    private int AlphaShaderID = -1;
+
     public Vector3[][] Points {
         get
         {
@@ -39,13 +45,23 @@ public class BorderRenderer : MonoBehaviour {
         if (CachedMeshes == null || BorderMaterial == null)
             return;
 
-        foreach(Mesh m in CachedMeshes)
+        if (LastBorderAlpha != BorderAlpha && BorderMaterial != null)
+        {
+            BorderMaterial.SetFloat("_Alpha", BorderAlpha);
+            LastBorderAlpha = BorderAlpha;
+        }
+
+        foreach (Mesh m in CachedMeshes)
             Graphics.DrawMesh(m, Matrix4x4.identity, BorderMaterial, 0, null, 0, null, false, false);
     }
 
     void OnValidate()
     {
         RegenerateMesh();
+
+        if (AlphaShaderID == -1)
+            AlphaShaderID = Shader.PropertyToID("_Alpha");
+        BorderMaterial.SetFloat(AlphaShaderID, BorderAlpha);
     }
 
     public void RegenerateMesh()

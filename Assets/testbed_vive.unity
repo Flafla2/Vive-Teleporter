@@ -573,6 +573,7 @@ GameObject:
   - 4: {fileID: 304753874}
   - 114: {fileID: 304753873}
   - 114: {fileID: 304753872}
+  - 95: {fileID: 304753875}
   m_Layer: 0
   m_Name: Navmesh
   m_TagString: Untagged
@@ -591,7 +592,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc6771e1245a80f4bb4d74aa5af717bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GroundMaterial: {fileID: 2100000, guid: 61ccb656016c9b44b8a49c327ee084a4, type: 2}
+  _GroundMaterial: {fileID: 2100000, guid: 61ccb656016c9b44b8a49c327ee084a4, type: 2}
+  GroundAlpha: 1
   _SelectableMesh: {fileID: 5335196}
   _Serialized:
     startIndex: 00000000110000001a000000250000002e000000
@@ -664,6 +666,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BorderMaterial: {fileID: 2100000, guid: b684c4a333b51ed4cb44a03406b9964b, type: 2}
+  BorderAlpha: 1
   _BorderHeight: 0.15
 --- !u!4 &304753874
 Transform:
@@ -678,6 +681,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
+--- !u!95 &304753875
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 304753871}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 0ce07017caf3a8744abb84c506642f56, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
 --- !u!1001 &304986436
 Prefab:
   m_ObjectHideFlags: 0
@@ -943,6 +963,9 @@ MonoBehaviour:
   OriginTransform: {fileID: 1611824065}
   CameraTransform: {fileID: 154042613}
   TeleportFadeDuration: 0.2
+  Navmesh: {fileID: 304753872}
+  Border: {fileID: 304753873}
+  NavmeshAnimator: {fileID: 304753875}
   FadeMaterial: {fileID: 2100000, guid: 5ba70d58d085f2b44b315edf2d739376, type: 2}
   Controllers:
   - {fileID: 1426292698}

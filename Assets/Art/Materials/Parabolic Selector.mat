@@ -6,8 +6,8 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: FadeBlack
-  m_Shader: {fileID: 4800000, guid: e98ca82967804e64eac60f5c295c4e18, type: 3}
+  m_Name: Parabolic Selector
+  m_Shader: {fileID: 4800000, guid: 18f009343c2ca574a83a6413c38bae08, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_CustomRenderQueue: 4000
@@ -19,7 +19,7 @@ Material:
         first:
           name: _MainTex
         second:
-          m_Texture: {fileID: 0}
+          m_Texture: {fileID: 2800000, guid: 73793cf31f539d5429a7c9cdd30370c3, type: 3}
           m_Scale: {x: 1, y: 1}
           m_Offset: {x: 0, y: 0}
       data:
@@ -129,8 +129,8 @@ Material:
         second: 0
       data:
         first:
-          name: _Fade
-        second: 0.0063476562
+          name: _Alpha
+        second: 1
     m_Colors:
       data:
         first:
@@ -139,4 +139,8 @@ Material:
       data:
         first:
           name: _Color
-        second: {r: 1, g: 1, b: 1, a: 1}
+        second: {r: 0.5363322, g: 0.8340889, b: 0.9117647, a: 0.791}
+      data:
+        first:
+          name: _BackColor
+        second: {r: 0.7681661, g: 0.90513265, b: 0.9411765, a: 0.303}
