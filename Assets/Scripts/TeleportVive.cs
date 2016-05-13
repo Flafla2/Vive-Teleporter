@@ -148,9 +148,11 @@ public class TeleportVive : MonoBehaviour {
         {
             int index = (int)ActiveController.index;
             var device = SteamVR_Controller.Input(index);
-            if (device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad))
+            bool shouldTeleport = device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad);
+            bool shouldCancel = device.GetPressUp(SteamVR_Controller.ButtonMask.Grip);
+            if (shouldTeleport || shouldCancel)
             {
-                if(Pointer.PointOnNavMesh)
+                if(shouldTeleport && Pointer.PointOnNavMesh)
                 {
                     Teleporting = true;
                     TeleportDestination = Pointer.SelectedPoint;
