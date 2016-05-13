@@ -21,19 +21,23 @@ public class ParabolicPointer : MonoBehaviour {
 
     public Vector3 SelectedPoint { get; private set; }
     public bool PointOnNavMesh { get; private set; }
+    public float CurrentParabolaAngle { get; private set; }
 
     private Mesh ParabolaMesh;
 
+    // Parabolic motion equation, y = p0 + v0*t + 1/2at^2
     private static float ParabolicCurve(float p0, float v0, float a, float t)
     {
         return p0 + v0 * t + 0.5f * a * t * t;
     }
 
+    // Derivative of parabolic motion equation
     private static float ParabolicCurveDeriv(float v0, float a, float t)
     {
         return v0 + a * t;
     }
 
+    // Parabolic motion equation applied to 3 dimensions
     private static Vector3 ParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float t)
     {
         Vector3 ret = new Vector3();
@@ -42,6 +46,7 @@ public class ParabolicPointer : MonoBehaviour {
         return ret;
     }
 
+    // Parabolic motion derivative applied to 3 dimensions
     private static Vector3 ParabolicCurveDeriv(Vector3 v0, Vector3 a, float t)
     {
         Vector3 ret = new Vector3();
@@ -50,6 +55,14 @@ public class ParabolicPointer : MonoBehaviour {
         return ret;
     }
 
+    // Sample a bunch of points along a parabolic curve until you hit gnd.  At that point, cut off the parabola
+    // p0: starting point of parabola
+    // v0: initial parabola velocity
+    // a: initial acceleration
+    // dist: distance between sample points
+    // points: number of sample points
+    // gnd: height of the ground, in meters above y=0
+    // outPts: List that will be populated by new points
     private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, List<Vector3> outPts)
     {
         outPts.Clear();
@@ -104,9 +117,6 @@ public class ParabolicPointer : MonoBehaviour {
             uv[2 * x + 1] = new Vector2(1, x - uvoffset_mod);
         }
 
-        //for(int x=0;x<verts.Length;x++)
-        //    verts[x] = transform.InverseTransformPoint(verts[x]);
-
         int[] indices = new int[2 * 3 * (verts.Length - 2)];
         for (int x = 0; x < verts.Length / 2 - 1; x++)
         {
@@ -152,9 +162,10 @@ public class ParabolicPointer : MonoBehaviour {
 
     void Update()
     {
+        // 1. Calculate Parabola Points
         Vector3 velocity = transform.TransformDirection(InitialVelocity);
         Vector3 velocity_normalized;
-        ClampInitialVelocity(ref velocity, out velocity_normalized);
+        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
         bool didHit = CalculateParabolicCurve(
             transform.position,
@@ -165,6 +176,7 @@ public class ParabolicPointer : MonoBehaviour {
 
         SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
 
+        // 2. Find endpoint of parabola on navmesh
         PointOnNavMesh = true;
         if(NavMesh != null)
         {
@@ -177,37 +189,70 @@ public class ParabolicPointer : MonoBehaviour {
                 SelectedPoint = rayorigin + Vector3.down * cast;
         }
 
+        // 3. Render Parabola graphics
+        // Make sure that there is actually a point on the navmesh, and that all requisite art is available
         bool ShouldDrawMarker = PointOnNavMesh && SelectionPadMesh != null
-            && SelectionPadFadeMaterial != null && SelectionPadBottomMaterial != null && SelectionPadCircleMaterial != null;
+            && SelectionPadFadeMaterial != null && SelectionPadBottomMaterial != null && 
+            SelectionPadCircleMaterial != null;
 
         if (ShouldDrawMarker)
         {
+            // Draw Inside of Selection pad
             Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 3);
+            // Draw Bottom of selection pad
             Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadCircleMaterial, 0, null, 1);
+            // Draw Bottom of selection pad
             Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadBottomMaterial, 0, null, 2);
         }
 
+        // Draw parabola (BEFORE the outside faces of the selection pad, to avoid depth issues)
         GenerateMesh(ref ParabolaMesh, ParabolaPoints, velocity, Time.time % 1);
 
+        // Draw outside faces of selection pad AFTER parabola (it is drawn on top)
         Graphics.DrawMesh(ParabolaMesh, Matrix4x4.identity, GraphicMaterial, 0);
 
         if (ShouldDrawMarker)
             Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 0);
     }
+    
+    // Used when you can't depend on Update() to automatically update CurrentParabolaAngle
+    // (for example, directly after enabling the component)
+    public void ForceUpdateCurrentAngle()
+    {
+        Vector3 velocity = transform.TransformDirection(InitialVelocity);
+        Vector3 d;
+        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out d);
+    }
 
-    // Clamps the given velocity vector so that it can't be more than 45 degrees above the vertical.
+    // Clamps the given velocity vector so that it can't be more than 45 degrees above the horizontal.
     // This is done so that it is easier to leverage the maximum distance (at the 45 degree angle) of
     // parabolic motion.
-    private void ClampInitialVelocity(ref Vector3 velocity, out Vector3 velocity_normalized) {
+    //
+    // Returns angle with reference to the XZ plane
+    private float ClampInitialVelocity(ref Vector3 velocity, out Vector3 velocity_normalized) {
+        // Project the initial velocity onto the XZ plane.  This gives us the "forward" direction
         Vector3 velocity_fwd = ProjectVectorOntoPlane(Vector3.up, velocity);
+
+        // Find the angle between the XZ plane and the velocity
         float angle = Vector3.Angle(velocity_fwd, velocity);
+        // Calculate positivity/negativity of the angle using the cross product
+        // Below is "right" from controller's perspective (could also be left, but it doesn't matter for our purposes)
+        Vector3 right = Vector3.Cross(Vector3.up, velocity_fwd);
+        // If the cross product between forward and the velocity is in the same direction as right, then we are below the vertical
+        if (Vector3.Dot(right, Vector3.Cross(velocity_fwd, velocity)) > 0)
+            angle *= -1;
+
+        // Clamp the angle if it is greater than 45 degrees
         if(angle > 45) {
             velocity = Vector3.Slerp(velocity_fwd, velocity, 45f / angle);
             velocity /= velocity.magnitude;
             velocity_normalized = velocity;
             velocity *= InitialVelocity.magnitude;
+            angle = 45;
         } else
             velocity_normalized = velocity.normalized;
+
+        return angle;
     }
 
 #if UNITY_EDITOR
@@ -215,7 +260,7 @@ public class ParabolicPointer : MonoBehaviour {
 
     void OnDrawGizmos()
     {
-        if (Application.isPlaying)
+        if (Application.isPlaying) // Otherwise the parabola can show in the game view
             return;
 
         if (ParabolaPoints_Gizmo == null)
@@ -223,7 +268,7 @@ public class ParabolicPointer : MonoBehaviour {
 
         Vector3 velocity = transform.TransformDirection(InitialVelocity);
         Vector3 velocity_normalized;
-        ClampInitialVelocity(ref velocity, out velocity_normalized);
+        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
         bool didHit = CalculateParabolicCurve(
             transform.position, 

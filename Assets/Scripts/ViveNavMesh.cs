@@ -51,6 +51,9 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         Border.Points = SelectableMeshBorder;
 
         AlphaShaderID = Shader.PropertyToID("_Alpha");
+#if UNITY_EDITOR
+        UnityEditor.SceneView.RepaintAll();
+#endif
     }
 
     void Update ()

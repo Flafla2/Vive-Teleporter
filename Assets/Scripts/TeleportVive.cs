@@ -9,6 +9,7 @@ public class TeleportVive : MonoBehaviour {
     public Transform CameraTransform;
 
     public float TeleportFadeDuration = 0.2f;
+    public float HapticClickAngleStep = 10;
 
     public ViveNavMesh Navmesh;
     private BorderRenderer NavmeshBorder;
@@ -24,6 +25,8 @@ public class TeleportVive : MonoBehaviour {
     public SteamVR_TrackedObject[] Controllers;
     private SteamVR_TrackedObject ActiveController;
 
+    private float LastClickAngle = 0;
+
     private bool Teleporting = false;
     private bool FadingIn = false;
     private float TeleportTimeMarker = -1;
@@ -34,8 +37,10 @@ public class TeleportVive : MonoBehaviour {
 
     void Start()
     {
+        // Disable the pointer graphic (until the user holds down on the touchpad)
         Pointer.enabled = false;
 
+        // Standard plane mesh used for "fade out" graphic when you teleport
         PlaneMesh = new Mesh();
         Vector3[] verts = new Vector3[]
         {
@@ -49,6 +54,7 @@ public class TeleportVive : MonoBehaviour {
         PlaneMesh.triangles = elts;
         PlaneMesh.RecalculateBounds();
 
+        // Set some standard variables
         cam = GetComponent<Camera>();
 
         MaterialFadeID = Shader.PropertyToID("_Fade");
@@ -58,6 +64,7 @@ public class TeleportVive : MonoBehaviour {
         RoomBorder = GetComponent<BorderRenderer>();
         RoomBorder.enabled = false;
 
+        // Sample the vive chaperone bounds
         float w = 0;
         float h = 0;
 
@@ -125,7 +132,7 @@ public class TeleportVive : MonoBehaviour {
                     Teleporting = false;
                 } else
                 {
-                    Vector3 offset = CameraTransform.position - OriginTransform.position;
+                    Vector3 offset = OriginTransform.position - CameraTransform.position;
                     offset.y = 0;
                     OriginTransform.position = Pointer.SelectedPoint + offset;
                 }
@@ -166,6 +173,14 @@ public class TeleportVive : MonoBehaviour {
                 offset.y = 0;
 
                 RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, Quaternion.identity, Vector3.one);
+
+                // Haptic feedback click every [HaptickClickAngleStep] degrees
+                float angleClickDiff = Pointer.CurrentParabolaAngle - LastClickAngle;
+                if(Mathf.Abs(angleClickDiff) > HapticClickAngleStep)
+                {
+                    LastClickAngle = Pointer.CurrentParabolaAngle;
+                    device.TriggerHapticPulse();
+                }
             }
         } else
         {
@@ -188,6 +203,9 @@ public class TeleportVive : MonoBehaviour {
                     RoomBorder.enabled = true;
                     if(NavmeshAnimator != null)
                         NavmeshAnimator.SetBool(EnabledAnimatorID, true);
+
+                    Pointer.ForceUpdateCurrentAngle();
+                    LastClickAngle = Pointer.CurrentParabolaAngle;
                 }
             }
         }
