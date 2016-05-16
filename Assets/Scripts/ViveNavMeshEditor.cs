@@ -3,6 +3,8 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 
+/// \brief Custom inspector for ViveNavMesh.  This handles the conversion from Unity NavMesh to Mesh and performs some
+///        computational geometry to find the borders of the mesh.
 [CustomEditor(typeof(ViveNavMesh))]
 public class ViveNavMeshEditor : Editor {
 
@@ -35,11 +37,11 @@ public class ViveNavMeshEditor : Editor {
         mesh.GroundAlpha = EditorGUILayout.Slider("Ground Alpha", mesh.GroundAlpha, 0, 1);
     }
 
-    // Converts a NavMesh (or a NavMesh area) into a standard Unity mesh.  This is later used
-    // to render the mesh on-screen using Unity's standard rendering tools.
-    // 
-    // navMesh: Precalculated Nav Mesh Triangulation
-    // area: area to consider in calculation
+    /// \brief Converts a NavMesh (or a NavMesh area) into a standard Unity mesh.  This is later used
+    ///        to render the mesh on-screen using Unity's standard rendering tools.
+    /// 
+    /// \param navMesh Precalculated Nav Mesh Triangulation
+    /// \param area area to consider in calculation
     private static Mesh ConvertNavmeshToMesh(NavMeshTriangulation navMesh, int area)
     {
         Mesh ret = new Mesh();
@@ -64,9 +66,15 @@ public class ViveNavMeshEditor : Editor {
         return ret;
     }
 
-    // VERY naive implementation of removing duplicate vertices in a mesh.  O(n^2).
-    // If this becomes an actual performance hog, consider changing this to sort the vertices
-    // in the mesh then removing duplicate
+    /// \brief VERY naive implementation of removing duplicate vertices in a mesh.  O(n^2).
+    /// 
+    /// This is necessary because Unity NavMeshes for some reason have a whole bunch of duplicate vertices (or vertices
+    /// that are very close together).  So some processing needs to be done go get rid of these.
+    /// 
+    /// If this becomes an actual performance hog, consider changing this to sort the vertices first using a more
+    /// optimized process O(n lg n) then removing adjacent duplicates.
+    /// 
+    /// \param m Mesh to remove duplicates from
     private static void RemoveMeshDuplicates(Mesh m)
     {
         Vector3[] verts = new Vector3[m.vertices.Length];
@@ -109,16 +117,20 @@ public class ViveNavMeshEditor : Editor {
         m.triangles = elts;
     }
 
-    // Given some mesh m, calculates a number of polylines that border the mesh.  This may return more than
-    // one polyline if, for example, the mesh has holes in it or if the mesh is separated in two pieces.
-    //
-    // m: input mesh
-    // returns: array of cyclic polylines
+    /// \brief Given some mesh m, calculates a number of polylines that border the mesh.  This may return more than
+    ///        one polyline if, for example, the mesh has holes in it or if the mesh is separated in two pieces.
+    ///
+    /// \param m input mesh
+    /// \returns array of cyclic polylines
     private static Vector3[][] FindBorderEdges(Mesh m)
     {
         // First, get together all the edges in the mesh and find out
         // how many times each edge is used.  Edges that are only used
         // once are border edges.
+
+        // Key: edges (note that because of how the hashcode / equals() is set up, two equivalent edges will effectively
+        //      be equal)
+        // Value: How many times this edge shows up in the mesh.  Any keys with a value of 1 are border edges.
         Dictionary<Edge, int> edges = new Dictionary<Edge, int>();
         for (int x = 0; x < m.triangles.Length / 3; x++)
         {
@@ -142,7 +154,7 @@ public class ViveNavMeshEditor : Editor {
         List<Edge> border = new List<Edge>();
         foreach (KeyValuePair<Edge, int> p in edges)
         {
-            if (p.Value == 1)
+            if (p.Value == 1) // border edge == edge only used once.
                 border.Add(p.Key);
         }
 
@@ -181,12 +193,12 @@ public class ViveNavMeshEditor : Editor {
         return ret.ToArray();
     }
 
-    // Given a list of edges, finds a polyline connected to the edge at index start.
-    // Guaranteed to run in O(n) time.
-    // 
-    // start: starting index of edge
-    // visited: tally of visited edges (perhaps from previous calls)
-    // edges: list of edges
+    /// Given a list of edges, finds a polyline connected to the edge at index start.
+    /// Guaranteed to run in O(n) time.  Assumes that each edge only has two neighbor edges.
+    /// 
+    /// \param start starting index of edge
+    /// \param visited tally of visited edges (perhaps from previous calls)
+    /// \param edges list of edges
     private static int[] FindPolylineFromEdges(int start, bool[] visited, List<Edge> edges)
     {
         List<int> loop = new List<int>(edges.Count);
@@ -194,6 +206,9 @@ public class ViveNavMeshEditor : Editor {
         loop.Add(edges[start].max);
         visited[start] = true;
 
+        // With each iteration of this while loop, we look for an edge that connects to the previous one
+        // but hasn't been processed yet (to prevent simply finding the previous edge again, and to prevent
+        // a hang if faulty data is given).
         while (loop[loop.Count - 1] != edges[start].min)
         {
             int cur = loop[loop.Count - 1];
@@ -208,6 +223,7 @@ public class ViveNavMeshEditor : Editor {
                     int next = edges[x].min == cur ? edges[x].max : edges[x].min;
                     loop.Add(next);
 
+                    // Mark the edge as visited and continue the outermost loop
                     visited[x] = true;
                     found = true;
                     break;

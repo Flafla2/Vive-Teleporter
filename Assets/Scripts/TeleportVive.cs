@@ -5,23 +5,34 @@ using Valve.VR;
 public class TeleportVive : MonoBehaviour {
 
     public ParabolicPointer Pointer;
+    /// Origin of SteamVR tracking space
     public Transform OriginTransform;
+    /// Origin of the player's head
     public Transform CameraTransform;
-
+    
+    /// How long, in seconds, the fade-in/fade-out animation should take
     public float TeleportFadeDuration = 0.2f;
+    /// Measure in degrees of how often the controller should respond with a haptic click.  Smaller value=faster clicks
     public float HapticClickAngleStep = 10;
 
+    /// NavMesh to sample
     public ViveNavMesh Navmesh;
+    /// BorderRenderer connected to ViveNavMesh
     private BorderRenderer NavmeshBorder;
+    /// BorderRenderer to render the chaperone bounds (when choosing a location to teleport to)
     private BorderRenderer RoomBorder;
 
+    /// Animator used to fade in/out the teleport area.  This should have a boolean parameter "Enabled" where if true
+    /// the selectable area is displayed on the ground.
     [SerializeField]
     private Animator NavmeshAnimator;
     private int EnabledAnimatorID;
 
+    /// Material used to render the fade in/fade out quad
     public Material FadeMaterial;
     private int MaterialFadeID;
 
+    /// SteamVR controllers that should be polled.
     public SteamVR_TrackedObject[] Controllers;
     private SteamVR_TrackedObject ActiveController;
 
@@ -41,6 +52,7 @@ public class TeleportVive : MonoBehaviour {
         Pointer.enabled = false;
 
         // Standard plane mesh used for "fade out" graphic when you teleport
+        // This way you don't need to supply a simple plane mesh in the inspector
         PlaneMesh = new Mesh();
         Vector3[] verts = new Vector3[]
         {
@@ -87,6 +99,12 @@ public class TeleportVive : MonoBehaviour {
 
     }
 
+    /// \brief Requests the chaperone boundaries of the SteamVR play area.  This doesn't work if you haven't performed
+    ///        Room Setup.
+    /// \param width populated with room width
+    /// \param height populated with room height
+    /// 
+    /// \returns If the play area retrieval was successful
     public static bool GetSoftBounds(ref float width, ref float height)
     {
         var initOpenVR = (!SteamVR.active && !SteamVR.usingNativeSupport);
@@ -107,10 +125,12 @@ public class TeleportVive : MonoBehaviour {
         return success;
     }
 
-        void OnPostRender()
+    void OnPostRender()
     {
         if(Teleporting)
         {
+            // Perform the fading in/fading out animation, if we are teleporting.  This is essentially a triangle wave
+            // in/out, and the user teleports when it is fully black.
             float alpha = Mathf.Clamp01((Time.time - TeleportTimeMarker) / (TeleportFadeDuration / 2));
             if (FadingIn)
                 alpha = 1 - alpha;
@@ -122,16 +142,22 @@ public class TeleportVive : MonoBehaviour {
         }
     }
 
-	void Update () {
+	void Update ()
+    {
+        // If we are currently teleporting (ie handling the fade in/out transition)...
         if(Teleporting)
         {
+            // Wait until half of the teleport time has passed before the next event (note: both the switch from fade
+            // out to fade in and the switch from fade in to stop the animation is half of the fade duration)
             if(Time.time - TeleportTimeMarker >= TeleportFadeDuration / 2)
             {
                 if(FadingIn)
                 {
+                    // We have finished fading in
                     Teleporting = false;
                 } else
                 {
+                    // We have finished fading out - time to teleport!
                     Vector3 offset = OriginTransform.position - CameraTransform.position;
                     offset.y = 0;
                     OriginTransform.position = Pointer.SelectedPoint + offset;
@@ -144,21 +170,29 @@ public class TeleportVive : MonoBehaviour {
             return;
         }
 
+        // At this point, we are NOT actively teleporting.  So now we care about controller input.
         if (ActiveController != null)
         {
+            // Here, there is an active controller - that is, the user is holding down on the trackpad.
+            // Poll controller for pertinent button data
             int index = (int)ActiveController.index;
             var device = SteamVR_Controller.Input(index);
             bool shouldTeleport = device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad);
             bool shouldCancel = device.GetPressUp(SteamVR_Controller.ButtonMask.Grip);
             if (shouldTeleport || shouldCancel)
             {
+                // If the user has decided to teleport (ie lets go of touchpad) then remove all visual indicators
+                // related to selecting things and actually teleport
+                // If the user has decided to cancel (ie squeezes grip button) then remove visual indicators and do nothing
                 if(shouldTeleport && Pointer.PointOnNavMesh)
                 {
+                    // Begin teleport sequence
                     Teleporting = true;
                     TeleportDestination = Pointer.SelectedPoint;
                     TeleportTimeMarker = Time.time;
                 }
                 
+                // Reset active controller, disable pointer, disable visual indicators
                 ActiveController = null;
                 Pointer.enabled = false;
                 RoomBorder.enabled = false;
@@ -171,9 +205,12 @@ public class TeleportVive : MonoBehaviour {
                 Pointer.transform.localScale = Vector3.one;
             } else
             {
+                // The user is still deciding where to teleport and has the touchpad held down.
+                // Note: rendering of the parabolic pointer / marker is done in ParabolicPointer
                 Vector3 offset = CameraTransform.position - OriginTransform.position;
                 offset.y = 0;
 
+                // Render representation of where the chaperone bounds will be after teleporting
                 RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, Quaternion.identity, Vector3.one);
 
                 // Haptic feedback click every [HaptickClickAngleStep] degrees
@@ -186,6 +223,9 @@ public class TeleportVive : MonoBehaviour {
             }
         } else
         {
+            // At this point the user is not holding down on the touchpad at all or has canceled a teleport and hasn't
+            // let go of the touchpad.  So we wait for the user to press the touchpad and enable visual indicators
+            // if necessary.
             foreach (SteamVR_TrackedObject obj in Controllers)
             {
                 int index = (int)obj.index;
@@ -195,6 +235,8 @@ public class TeleportVive : MonoBehaviour {
                 var device = SteamVR_Controller.Input(index);
                 if (device.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad))
                 {
+                    // Set active controller to this controller, and enable the parabolic pointer and visual indicators
+                    // that the user can use to determine where they are able to teleport.
                     ActiveController = obj;
 
                     Pointer.transform.parent = obj.transform;

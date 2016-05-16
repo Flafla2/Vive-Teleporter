@@ -1,9 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// \brief A generic component that renders a border using the given polylines.  The borders are double sided and are oriented
+///        upwards (ie normals are parallel to the XZ plane)
 [ExecuteInEditMode]
 public class BorderRenderer : MonoBehaviour {
     private Mesh[] CachedMeshes;
+    /// Material used to render the border mesh.  Note: UVs are set up so that v=0->bottom and v=1->top of border
     public Material BorderMaterial;
 
     [System.NonSerialized]
@@ -15,6 +18,7 @@ public class BorderRenderer : MonoBehaviour {
 
     private int AlphaShaderID = -1;
 
+    /// Polylines that will be drawn.
     public Vector3[][] Points {
         get
         {

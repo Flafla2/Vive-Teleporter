@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+/// \brief A test script for "The Lab" style teleportation if you don't have a Vive.  Keep in mind that this 
+///        doesn't have fade in/out, whereas TeleportVive (a version of this specifically made for the Vive) does.
+/// \sa TeleportVive
 public class TeleportTest : MonoBehaviour {
 
     public Camera LookCamera;

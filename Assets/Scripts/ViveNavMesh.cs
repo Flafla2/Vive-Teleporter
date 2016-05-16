@@ -2,10 +2,14 @@
 using UnityEngine.Rendering;
 using System.Collections.Generic;
 
+/// \brief A version of Unity's baked navmesh that is converted to a (serializable) component.  This allows the navmesh 
+///        used for Vive navigation to be separated form the AI Navmesh.  ViveNavMesh also handles the rendering of the 
+///        NavMesh grid in-game.
 [RequireComponent(typeof(BorderRenderer))]
 [ExecuteInEditMode]
 public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 {
+    /// Material used for the floor mesh when the user is selecting a point to teleport to
     public Material GroundMaterial
     {
         get { return _GroundMaterial; }
@@ -21,10 +25,13 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     [SerializeField]
     private Material _GroundMaterial;
 
+    /// \brief The alpha value of the ground
+    /// \sa GroundMaterial
     public float GroundAlpha = 1.0f;
     private float LastGroundAlpha = 1.0f;
     private int AlphaShaderID = -1;
 
+    /// A Mesh that represents the "Selectable" area of the world.  This is converted from Unity's NavMesh in ViveNavMeshEditor
     public Mesh SelectableMesh
     {
         get { return _SelectableMesh; }
@@ -33,12 +40,17 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     [SerializeField] [HideInInspector]
     private Mesh _SelectableMesh;
 
+    /// \brief The border points of SelectableMesh.  This is automatically generated in ViveNavMeshEditor.
+    /// 
+    /// This is an array of Vector3 arrays, where each Vector3 array is the points in a polyline.  These polylines combined
+    /// describe the borders of SelectableMesh.
     public Vector3[][] SelectableMeshBorder
     {
         get { return _SelectableMeshBorder; }
         set { _SelectableMeshBorder = value; Border.Points = _SelectableMeshBorder; }
     }
     private Vector3[][] _SelectableMeshBorder;
+    // Use this to actually serialize SelectableMeshBorder (you can't serialize multidimensional arrays apparently)
     [SerializeField] [HideInInspector]
     private SerializableMultiDim _Serialized;
 
@@ -58,6 +70,8 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     void Update ()
     {
+        // We have to detect changes this way instead of using properties because
+        // we want to be able to animate the alpha value with a Unity animator.
         if (GroundAlpha != LastGroundAlpha && GroundMaterial != null)
         {
             GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
@@ -89,6 +103,8 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     void OnRenderObject()
     {
+        // We have to use command buffers instead of Graphics.DrawMesh because of strange depth issues that I am experiencing
+        // with Graphics.Drawmesh (perhaps Graphics.DrawMesh is called before all opaque objects are rendered?)
         var act = gameObject.activeInHierarchy && enabled;
         if (!act)
         {
@@ -120,9 +136,11 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             AlphaShaderID = Shader.PropertyToID("_Alpha");
     }
 
-    // Casts a ray against the contents of this mesh (in world space)
-    // 
-    // Returns -1 if no hit, or the distance along the ray of the hit
+    /// \brief Casts a ray against the contents of this mesh (in world space)
+    /// 
+    /// \param ray The ray to cast against the navmesh, in world space
+    /// 
+    /// \return -1 if no hit, or the distance along the ray of the hit
     public float Raycast(Ray ray)
     {
         if (SelectableMesh == null)
@@ -141,10 +159,14 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         return -1;
     }
 
-    // Checks if the specified ray hits the triangle descibed by p1, p2 and p3.
-    // Möller–Trumbore ray-triangle intersection algorithm implementation.
-    //
-    // Adapted From: http://answers.unity3d.com/questions/861719/a-fast-triangle-triangle-intersection-algorithm-fo.html
+    /// \brief  Checks if the specified ray hits the triangle descibed by p1, p2 and p3.
+    ///         Möller–Trumbore ray-triangle intersection algorithm implementation.
+    ///         
+    /// \param p1 Point 1 of triangle
+    /// \param p2 Point 2 of triangle
+    /// \param p3 Point 3 of triangle
+    ///
+    /// Adapted From: http://answers.unity3d.com/questions/861719/a-fast-triangle-triangle-intersection-algorithm-fo.html
     private static float Intersect(Vector3 p1, Vector3 p2, Vector3 p3, Ray ray)
     {
         // Vectors from p1 to p2/p3 (edges)
