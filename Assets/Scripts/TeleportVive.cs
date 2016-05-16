@@ -74,38 +74,27 @@ public class TeleportVive : MonoBehaviour {
 
         NavmeshBorder = Navmesh.GetComponent<BorderRenderer>();
         RoomBorder = GetComponent<BorderRenderer>();
-        RoomBorder.enabled = false;
 
-        // Sample the vive chaperone bounds
-        float w = 0;
-        float h = 0;
-
-        if (GetSoftBounds(ref w, ref h))
+        Vector3 p0, p1, p2, p3;
+        if (GetChaperoneBounds(out p0, out p1, out p2, out p3))
         {
-            w /= 2;
-            h /= 2;
             RoomBorder.Points = new Vector3[][]
             {
                 new Vector3[] {
-                    new Vector3(w, 0, h),
-                    new Vector3(w, 0, -h),
-                    new Vector3(-w, 0, -h),
-                    new Vector3(-w, 0, h),
-                    new Vector3(w, 0, h)
+                    p0, p1, p2, p3, p0
                 }
             };
-        }
+        }   
             
 
     }
 
     /// \brief Requests the chaperone boundaries of the SteamVR play area.  This doesn't work if you haven't performed
     ///        Room Setup.
-    /// \param width populated with room width
-    /// \param height populated with room height
+    /// \param p0, p1, p2, p3 Points that make up the chaperone boundaries.
     /// 
     /// \returns If the play area retrieval was successful
-    public static bool GetSoftBounds(ref float width, ref float height)
+    public static bool GetChaperoneBounds(out Vector3 p0, out Vector3 p1, out Vector3 p2, out Vector3 p3)
     {
         var initOpenVR = (!SteamVR.active && !SteamVR.usingNativeSupport);
         if (initOpenVR)
@@ -115,7 +104,12 @@ public class TeleportVive : MonoBehaviour {
         }
 
         var chaperone = OpenVR.Chaperone;
-        bool success = (chaperone != null) && chaperone.GetPlayAreaSize(ref width, ref height);
+        HmdQuad_t rect = new HmdQuad_t();
+        bool success = (chaperone != null) && chaperone.GetPlayAreaRect(ref rect);
+        p0 = new Vector3(rect.vCorners0.v0, rect.vCorners0.v1, rect.vCorners0.v2);
+        p1 = new Vector3(rect.vCorners1.v0, rect.vCorners1.v1, rect.vCorners1.v2);
+        p2 = new Vector3(rect.vCorners2.v0, rect.vCorners2.v1, rect.vCorners2.v2);
+        p3 = new Vector3(rect.vCorners3.v0, rect.vCorners3.v1, rect.vCorners3.v2);
         if (!success)
             Debug.LogWarning("Failed to get Calibrated Play Area bounds!  Make sure you have tracking first, and that your space is calibrated.");
 
@@ -196,6 +190,7 @@ public class TeleportVive : MonoBehaviour {
                 ActiveController = null;
                 Pointer.enabled = false;
                 RoomBorder.enabled = false;
+                //RoomBorder.Transpose = Matrix4x4.TRS(OriginTransform.position, Quaternion.identity, Vector3.one);
                 if (NavmeshAnimator != null)
                     NavmeshAnimator.SetBool(EnabledAnimatorID, false);
 
