@@ -129,11 +129,11 @@ Material:
         second: 0
       data:
         first:
-          name: _TexScale
+          name: _Alpha
         second: 1
       data:
         first:
-          name: _Alpha
+          name: _TexScale
         second: 1
     m_Colors:
       data:
