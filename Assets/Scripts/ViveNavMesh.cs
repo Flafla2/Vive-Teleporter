@@ -17,7 +17,8 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         {
             Material old = _GroundMaterial;
             _GroundMaterial = value;
-            _GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
+            if(_GroundMaterial != null)
+                _GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
             if (old != _GroundMaterial)
                 Cleanup();
         }
