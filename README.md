@@ -3,7 +3,9 @@ HTC Vive Teleportation System with Parabolic Pointer
 
 This is an easy-to-use teleportation system for the HTC Vive and the Unity game engine.  The system is modelled after
 Valve's game for the Vive [*The Lab*](http://store.steampowered.com/app/450390/), where the player can traverse 
-VR environments that are bigger than the play area.
+VR environments that are bigger than the play area.  Below you can see myself demoing the system (click for higher quality):
+
+[![Demo](https://thumbs.gfycat.com/HonorableComplexCutworm-size_restricted.gif)](https://gfycat.com/HonorableComplexCutworm)
 
 The system presented here solves a number of problems:
 
