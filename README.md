@@ -21,6 +21,7 @@ The system presented here solves a number of problems:
    * Change your Navigation settings back to their original values and rebake (to be used for other things like AI, etc.)
 
    You can of course update the Vive Nav Mesh component with new NavMesh bakes whenever you update the scene.  The above process is illustrated below:
+   
    [![Updating the NavMesh](https://thumbs.gfycat.com/WelldocumentedForcefulAlaskanmalamute-size_restricted.gif)](https://gfycat.com/WelldocumentedForcefulAlaskanmalamute)
 2. **Selecting a Teleport Destination**: This system uses an intuitive parabolic curve selection mechanism using simple
    kinematic equations.  Once again, this was inspired by Valve's *The Lab*.  As the user raises their controller to a higher
