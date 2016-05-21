@@ -26,11 +26,27 @@ public class ViveNavMeshEditor : Editor {
 
         ViveNavMesh mesh = (ViveNavMesh)target;
 
+        bool HasMesh = mesh.SelectableMesh != null || mesh.SelectableMeshBorder.Length != 0;
+
         if (GUILayout.Button("Update Navmesh Data"))
         {
             mesh.SelectableMesh = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
             mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
+
+            EditorUtility.SetDirty(mesh.gameObject);
         }
+
+        GUI.enabled = HasMesh;
+        if(GUILayout.Button("Clear Navmesh Data"))
+        {
+            mesh.SelectableMesh = null;
+            mesh.SelectableMeshBorder = new Vector3[0][];
+
+            EditorUtility.SetDirty(mesh.gameObject);
+        }
+        GUI.enabled = true;
+
+        GUILayout.Label(HasMesh ? "Status: NavMesh Loaded" : "Status: No NavMesh Loaded");
 
         EditorGUILayout.LabelField("Render Settings", EditorStyles.boldLabel);
         mesh.GroundMaterial = (Material)EditorGUILayout.ObjectField("Ground Material", mesh.GroundMaterial, typeof(Material), false);

@@ -75,7 +75,10 @@ public class BorderRenderer : MonoBehaviour {
     public void RegenerateMesh()
     {
         if (Points == null)
+        {
+            CachedMeshes = new Mesh[0];
             return;
+        }
         CachedMeshes = new Mesh[Points.Length];
         for(int x=0;x<CachedMeshes.Length;x++)
             CachedMeshes[x] = GenerateMeshForPoints(Points[x]);
