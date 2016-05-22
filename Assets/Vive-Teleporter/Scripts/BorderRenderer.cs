@@ -49,7 +49,7 @@ public class BorderRenderer : MonoBehaviour {
     }
     [SerializeField]
     [Tooltip("Height of the border mesh, in meters.")]
-    private float _BorderHeight;
+    private float _BorderHeight = 0.2f;
 
     void Update()
     {
