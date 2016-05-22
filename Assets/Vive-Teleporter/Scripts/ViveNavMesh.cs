@@ -5,6 +5,7 @@ using System.Collections.Generic;
 /// \brief A version of Unity's baked navmesh that is converted to a (serializable) component.  This allows the navmesh 
 ///        used for Vive navigation to be separated form the AI Navmesh.  ViveNavMesh also handles the rendering of the 
 ///        NavMesh grid in-game.
+[AddComponentMenu("Vive Teleporter/Vive Nav Mesh")]
 [RequireComponent(typeof(BorderRenderer))]
 [ExecuteInEditMode]
 public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver

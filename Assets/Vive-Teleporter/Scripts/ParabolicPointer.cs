@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+[AddComponentMenu("Vive Teleporter/Parabolic Pointer")]
 public class ParabolicPointer : MonoBehaviour {
 
     public ViveNavMesh NavMesh;

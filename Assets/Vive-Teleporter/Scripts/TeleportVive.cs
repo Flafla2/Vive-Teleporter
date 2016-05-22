@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Valve.VR;
 
+[AddComponentMenu("Vive Teleporter/Vive Teleporter")]
 [RequireComponent(typeof(Camera), typeof(BorderRenderer))]
 public class TeleportVive : MonoBehaviour {
 

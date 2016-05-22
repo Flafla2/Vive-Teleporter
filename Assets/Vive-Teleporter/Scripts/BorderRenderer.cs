@@ -3,6 +3,7 @@ using System.Collections;
 
 /// \brief A generic component that renders a border using the given polylines.  The borders are double sided and are oriented
 ///        upwards (ie normals are parallel to the XZ plane)
+[AddComponentMenu("Vive Teleporter/Border Renderer")]
 [ExecuteInEditMode]
 public class BorderRenderer : MonoBehaviour {
     private Mesh[] CachedMeshes;
