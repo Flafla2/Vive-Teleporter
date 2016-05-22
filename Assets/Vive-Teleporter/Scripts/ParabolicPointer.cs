@@ -179,7 +179,7 @@ public class ParabolicPointer : MonoBehaviour {
         Vector3 velocity_normalized;
         CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
-        bool didHit = CalculateParabolicCurve(
+        CalculateParabolicCurve(
             transform.position,
             velocity,
             Acceleration, PointSpacing, PointCount,

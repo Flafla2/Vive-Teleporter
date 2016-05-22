@@ -45,10 +45,8 @@ public class TeleportVive : MonoBehaviour {
     private bool Teleporting = false;
     private bool FadingIn = false;
     private float TeleportTimeMarker = -1;
-    private Vector3 TeleportDestination;
 
     private Mesh PlaneMesh;
-    private Camera cam;
 
     void Start()
     {
@@ -71,8 +69,6 @@ public class TeleportVive : MonoBehaviour {
         PlaneMesh.RecalculateBounds();
 
         // Set some standard variables
-        cam = GetComponent<Camera>();
-
         MaterialFadeID = Shader.PropertyToID("_Fade");
         EnabledAnimatorID = Animator.StringToHash("Enabled");
 
@@ -185,7 +181,6 @@ public class TeleportVive : MonoBehaviour {
                 {
                     // Begin teleport sequence
                     Teleporting = true;
-                    TeleportDestination = Pointer.SelectedPoint;
                     TeleportTimeMarker = Time.time;
                 }
                 

@@ -482,6 +482,11 @@ MonoBehaviour:
     type: 2}
   m_PrefabInternal: {fileID: 579635359}
   m_Script: {fileID: 11500000, guid: bc6771e1245a80f4bb4d74aa5af717bd, type: 3}
+--- !u!95 &579635361 stripped
+Animator:
+  m_PrefabParentObject: {fileID: 9569928, guid: 71ca5259ca9ec7947975936be41698a7,
+    type: 2}
+  m_PrefabInternal: {fileID: 579635359}
 --- !u!1 &710685919
 GameObject:
   m_ObjectHideFlags: 0
@@ -682,12 +687,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a200554d92bd8e54792301df3fcaf328, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Pointer: {fileID: 0}
+  Pointer: {fileID: 1241618616}
   OriginTransform: {fileID: 1611824065}
   HeadTransform: {fileID: 154042613}
   TeleportFadeDuration: 0.2
   HapticClickAngleStep: 10
-  NavmeshAnimator: {fileID: 0}
+  NavmeshAnimator: {fileID: 579635361}
   FadeMaterial: {fileID: 2100000, guid: 5ba70d58d085f2b44b315edf2d739376, type: 2}
   Controllers:
   - {fileID: 1426292698}
@@ -912,6 +917,12 @@ Prefab:
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 9e047e2aefaa8dc47b373572e8c58866, type: 2}
   m_IsPrefabParent: 0
+--- !u!114 &1241618616 stripped
+MonoBehaviour:
+  m_PrefabParentObject: {fileID: 11446438, guid: 9e047e2aefaa8dc47b373572e8c58866,
+    type: 2}
+  m_PrefabInternal: {fileID: 1241618615}
+  m_Script: {fileID: 11500000, guid: 4fab14c273ccf644493c840d4ecf5ab2, type: 3}
 --- !u!1 &1312848188
 GameObject:
   m_ObjectHideFlags: 0
