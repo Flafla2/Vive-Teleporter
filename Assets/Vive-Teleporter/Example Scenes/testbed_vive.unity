@@ -899,10 +899,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Pointer: {fileID: 1798159221}
   OriginTransform: {fileID: 1611824065}
-  CameraTransform: {fileID: 154042613}
+  HeadTransform: {fileID: 154042613}
   TeleportFadeDuration: 0.2
   HapticClickAngleStep: 10
-  Navmesh: {fileID: 304753872}
   NavmeshAnimator: {fileID: 304753875}
   FadeMaterial: {fileID: 2100000, guid: 5ba70d58d085f2b44b315edf2d739376, type: 2}
   Controllers:
