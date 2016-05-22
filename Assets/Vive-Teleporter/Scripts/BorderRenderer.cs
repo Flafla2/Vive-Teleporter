@@ -8,12 +8,14 @@ using System.Collections;
 public class BorderRenderer : MonoBehaviour {
     private Mesh[] CachedMeshes;
     /// Material used to render the border mesh.  Note: UVs are set up so that v=0->bottom and v=1->top of border
+    [Tooltip("Material used to render the border mesh.  UV's are set up so that v=0->bottom and v=1->top.  u is stretched along each edge.")]
     public Material BorderMaterial;
 
     [System.NonSerialized]
     public Matrix4x4 Transpose = Matrix4x4.identity;
 
     [SerializeField] [Range(0,1)]
+    [Tooltip("Alpha (transparency) of the border mesh.")]
     public float BorderAlpha = 1.0f;
     private float LastBorderAlpha = 1.0f;
 
@@ -46,6 +48,7 @@ public class BorderRenderer : MonoBehaviour {
         }
     }
     [SerializeField]
+    [Tooltip("Height of the border mesh, in meters.")]
     private float _BorderHeight;
 
     void Update()

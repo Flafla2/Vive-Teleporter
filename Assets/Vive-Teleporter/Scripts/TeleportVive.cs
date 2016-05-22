@@ -4,36 +4,39 @@ using Valve.VR;
 [AddComponentMenu("Vive Teleporter/Vive Teleporter")]
 [RequireComponent(typeof(Camera), typeof(BorderRenderer))]
 public class TeleportVive : MonoBehaviour {
-
+    [Tooltip("Parabolic Pointer object to pull destination points from, and to assign to each controller.")]
     public ParabolicPointer Pointer;
     /// Origin of SteamVR tracking space
+    [Tooltip("Origin of the SteamVR tracking space")]
     public Transform OriginTransform;
     /// Origin of the player's head
-    public Transform CameraTransform;
+    [Tooltip("Transform of the player's head")]
+    public Transform HeadTransform;
     
     /// How long, in seconds, the fade-in/fade-out animation should take
+    [Tooltip("Duration of the \"blink\" animation (fading in and out upon teleport) in seconds.")]
     public float TeleportFadeDuration = 0.2f;
     /// Measure in degrees of how often the controller should respond with a haptic click.  Smaller value=faster clicks
+    [Tooltip("The player feels a haptic pulse in the controller when they raise / lower the controller by this many degrees.  Lower value = faster pulses.")]
     public float HapticClickAngleStep = 10;
 
-    /// NavMesh to sample
-    public ViveNavMesh Navmesh;
-    /// BorderRenderer connected to ViveNavMesh
-    private BorderRenderer NavmeshBorder;
     /// BorderRenderer to render the chaperone bounds (when choosing a location to teleport to)
     private BorderRenderer RoomBorder;
 
     /// Animator used to fade in/out the teleport area.  This should have a boolean parameter "Enabled" where if true
     /// the selectable area is displayed on the ground.
     [SerializeField]
+    [Tooltip("Animator with a boolean \"Enabled\" parameter that is set to true when the player is choosing a place to teleport.")]
     private Animator NavmeshAnimator;
     private int EnabledAnimatorID;
 
     /// Material used to render the fade in/fade out quad
+    [Tooltip("Material used to render the fade in/fade out quad.")]
     public Material FadeMaterial;
     private int MaterialFadeID;
 
     /// SteamVR controllers that should be polled.
+    [Tooltip("Array of SteamVR controllers that may used to select a teleport destination.")]
     public SteamVR_TrackedObject[] Controllers;
     private SteamVR_TrackedObject ActiveController;
 
@@ -73,7 +76,6 @@ public class TeleportVive : MonoBehaviour {
         MaterialFadeID = Shader.PropertyToID("_Fade");
         EnabledAnimatorID = Animator.StringToHash("Enabled");
 
-        NavmeshBorder = Navmesh.GetComponent<BorderRenderer>();
         RoomBorder = GetComponent<BorderRenderer>();
 
         Vector3 p0, p1, p2, p3;
@@ -153,7 +155,7 @@ public class TeleportVive : MonoBehaviour {
                 } else
                 {
                     // We have finished fading out - time to teleport!
-                    Vector3 offset = OriginTransform.position - CameraTransform.position;
+                    Vector3 offset = OriginTransform.position - HeadTransform.position;
                     offset.y = 0;
                     OriginTransform.position = Pointer.SelectedPoint + offset;
                 }
@@ -203,7 +205,7 @@ public class TeleportVive : MonoBehaviour {
             {
                 // The user is still deciding where to teleport and has the touchpad held down.
                 // Note: rendering of the parabolic pointer / marker is done in ParabolicPointer
-                Vector3 offset = CameraTransform.position - OriginTransform.position;
+                Vector3 offset = HeadTransform.position - OriginTransform.position;
                 offset.y = 0;
 
                 // Render representation of where the chaperone bounds will be after teleporting

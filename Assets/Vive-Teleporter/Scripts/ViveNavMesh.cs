@@ -27,7 +27,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     [SerializeField]
     private Material _GroundMaterial;
 
-    /// \brief The alpha value of the ground
+    /// \brief The alpha (transparency) value of the rendered ground mesh)
     /// \sa GroundMaterial
     public float GroundAlpha = 1.0f;
     private float LastGroundAlpha = 1.0f;

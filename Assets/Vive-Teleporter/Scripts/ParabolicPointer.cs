@@ -6,18 +6,29 @@ public class ParabolicPointer : MonoBehaviour {
 
     public ViveNavMesh NavMesh;
     [Header("Parabola Trajectory")]
+    [Tooltip("Initial velocity of the parabola, in local space.")]
     public Vector3 InitialVelocity = Vector3.forward * 10f;
+    [Tooltip("World-space \"acceleration\" of the parabola.  This effects the falloff of the curve.")]
     public Vector3 Acceleration = Vector3.up * -9.8f;
     [Header("Parabola Mesh Properties")]
+    [Tooltip("Number of points on the parabola mesh.  Greater point counts lead to a higher poly/smoother mesh.")]
     public int PointCount = 10;
+    [Tooltip("Approximate spacing between each of the points on the parabola mesh.")]
     public float PointSpacing = 0.5f;
+    [Tooltip("World-space height of the ground in-game")]
     public float GroundHeight = 0;
+    [Tooltip("Thickness of the parabola mesh")]
     public float GraphicThickness = 0.2f;
+    [Tooltip("Material to use to render the parabola mesh")]
     public Material GraphicMaterial;
     [Header("Selection Pad Properties")]
+    [Tooltip("Mesh to use for the selection pad (where the user is selecting stuff)")]
     public Mesh SelectionPadMesh;
+    [Tooltip("Material to use for the fading-out area of the selection pad (the outer wall)")]
     public Material SelectionPadFadeMaterial;
+    [Tooltip("Material to use for the edge of the bottom of the selection pad")]
     public Material SelectionPadCircleMaterial;
+    [Tooltip("Material to use for the inside of the bottom of the selection pad")]
     public Material SelectionPadBottomMaterial;
 
     public Vector3 SelectedPoint { get; private set; }
