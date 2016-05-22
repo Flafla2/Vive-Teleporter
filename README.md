@@ -1,5 +1,5 @@
 HTC Vive Teleportation System with Parabolic Pointer
-----------------------------------------------------
+====================================================
 
 This is an easy-to-use teleportation system for the HTC Vive and the Unity game engine.  The system is modelled after
 Valve's game for the Vive [*The Lab*](http://store.steampowered.com/app/450390/), where the player can traverse 
@@ -44,7 +44,7 @@ may be used to demo the system if you don't own or have access to an HTC Vive.  
 commented and may be used following the MIT Licence (see LICENSE.txt).
 
 Getting Started
-===============
+---------------
 
 To get a basic teleportation setup running you need to use three components: 
 
