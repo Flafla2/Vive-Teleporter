@@ -115,6 +115,10 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             return;
         }
 
+        // If _SelectableMesh == null there is a crash in Unity 5.4 beta (apparently you can't pass null to CommandBuffer::DrawMesh now).
+        if (!_SelectableMesh)
+            return;
+
         var cam = Camera.current;
         if (!cam || cam.cameraType == CameraType.Preview)
             return;
