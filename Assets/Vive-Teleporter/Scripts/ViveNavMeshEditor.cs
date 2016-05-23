@@ -27,7 +27,7 @@ public class ViveNavMeshEditor : Editor {
 
         ViveNavMesh mesh = (ViveNavMesh)target;
 
-        bool HasMesh = mesh.SelectableMesh.vertexCount != 0 || mesh.SelectableMeshBorder.Length != 0;
+        bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || mesh.SelectableMeshBorder.Length != 0;
 
         if (GUILayout.Button("Update Navmesh Data"))
         {
