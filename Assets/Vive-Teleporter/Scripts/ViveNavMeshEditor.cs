@@ -27,10 +27,12 @@ public class ViveNavMeshEditor : Editor {
 
         ViveNavMesh mesh = (ViveNavMesh)target;
 
-        bool HasMesh = mesh.SelectableMesh != null || mesh.SelectableMeshBorder.Length != 0;
+        bool HasMesh = mesh.SelectableMesh.vertexCount != 0 || mesh.SelectableMeshBorder.Length != 0;
 
         if (GUILayout.Button("Update Navmesh Data"))
         {
+            Undo.RecordObject(mesh, "Update Navmesh Data");
+
             mesh.SelectableMesh = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
             mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
 
@@ -40,7 +42,10 @@ public class ViveNavMeshEditor : Editor {
         GUI.enabled = HasMesh;
         if(GUILayout.Button("Clear Navmesh Data"))
         {
-            mesh.SelectableMesh = null;
+            Undo.RecordObject(mesh, "Clear Navmesh Data");
+
+            // Note: Unity does not serialize "null" correctly so we set everything to empty objects
+            mesh.SelectableMesh = new Mesh();
             mesh.SelectableMeshBorder = new Vector3[0][];
 
             EditorUtility.SetDirty(mesh.gameObject);

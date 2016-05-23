@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
 
@@ -53,8 +54,8 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     }
     private Vector3[][] _SelectableMeshBorder;
     // Use this to actually serialize SelectableMeshBorder (you can't serialize multidimensional arrays apparently)
-    [SerializeField] [HideInInspector]
-    private SerializableMultiDim _Serialized;
+    [SerializeField] [HideInInspector] [FormerlySerializedAs("_Serialized")]
+    private SerializableMultiDim _SerializedBorder;
 
     private BorderRenderer Border;
 
@@ -213,12 +214,12 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     public void OnBeforeSerialize()
     {
-        _Serialized = new SerializableMultiDim(_SelectableMeshBorder);
+        _SerializedBorder = new SerializableMultiDim(_SelectableMeshBorder);
     }
 
     public void OnAfterDeserialize()
     {
-        _SelectableMeshBorder = _Serialized.ToMultiDimArray();
+        _SelectableMeshBorder = _SerializedBorder.ToMultiDimArray();
     }
 
     [System.Serializable]
@@ -229,7 +230,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         public Vector3[] arr;
 
         public SerializableMultiDim (Vector3[][] src) {
-            if(src == null)
+            if(src == null || src.Length == 0)
             {
                 startIndex = new int[0];
                 lengths = new int[0];

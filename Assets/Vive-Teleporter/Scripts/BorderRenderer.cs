@@ -90,6 +90,9 @@ public class BorderRenderer : MonoBehaviour {
 	
 	private Mesh GenerateMeshForPoints(Vector3[] Points)
     {
+        if (Points.Length <= 1)
+            return new Mesh();
+
         Vector3[] verts = new Vector3[Points.Length * 2];
         Vector2[] uv = new Vector2[Points.Length * 2];
         for(int x=0;x<Points.Length;x++)
