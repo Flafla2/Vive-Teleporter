@@ -70,7 +70,8 @@ public class ViveNavMeshEditor : Editor {
 
         Vector3[] vertices = new Vector3[navMesh.vertices.Length];
         for (int x = 0; x < vertices.Length; x++)
-            vertices[x] = navMesh.vertices[x];
+            // Note: Unity navmesh is offset 0.05m from the ground.  This pushes it down to 0.005m (to avoid zfighting, but be closer to the ground)
+            vertices[x] = navMesh.vertices[x] + Vector3.up * -0.045f;
 
         int[] triangles = new int[navMesh.indices.Length];
         for (int x = 0; x < triangles.Length; x++)

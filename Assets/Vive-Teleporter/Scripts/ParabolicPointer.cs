@@ -210,11 +210,11 @@ public class ParabolicPointer : MonoBehaviour {
         if (ShouldDrawMarker)
         {
             // Draw Inside of Selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 3);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 3);
             // Draw Bottom of selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadCircleMaterial, 0, null, 1);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadCircleMaterial, 0, null, 1);
             // Draw Bottom of selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadBottomMaterial, 0, null, 2);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadBottomMaterial, 0, null, 2);
         }
 
         // Draw parabola (BEFORE the outside faces of the selection pad, to avoid depth issues)
@@ -224,7 +224,7 @@ public class ParabolicPointer : MonoBehaviour {
         Graphics.DrawMesh(ParabolaMesh, Matrix4x4.identity, GraphicMaterial, 0);
 
         if (ShouldDrawMarker)
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.05f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 0);
+            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, 0, null, 0);
     }
     
     // Used when you can't depend on Update() to automatically update CurrentParabolaAngle
