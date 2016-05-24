@@ -98,6 +98,8 @@ heirarchy and at any position in the scene.
 You can of course tweak any of the settings in the Parabolic Pointer script, but you only *have* to set one of them: 
 assign the *Vive Nav Mesh* object from Step 1 to the "Nav Mesh" property of the Pointer.
 
+**Important: The system only supports one ground height at this time.**  You can change this ground height using the *Ground Height* property of a *Parabolic Pointer* component.  You can also change this value in scripting, if you want to change the height during discrete events (for example, an elevator).
+
 ### Step 3: Configure the Vive Teleporter
 
 ![Vive Teleporter](http://i.imgur.com/dYCQaPN.png)
