@@ -20,12 +20,32 @@ public class ViveNavMeshEditor : Editor {
         GUIStyle wrap = EditorStyles.label;
         wrap.wordWrap = true;
         GUILayout.Label(
-            "Change your navmesh settings (Window > Navigation) to where you want the player to be able to navigate and bake the navmesh.  "+
-            "Then click \"Update Navmesh Data\" below.  You may change the navigation settings back and rebake after you have updated.\n\nRecommended Settings:\n" +
-            "Agent Radius: 0.25\nAgent Height: 2\nMax Slope: 0\nStep Height: 0\nDrop Height: 0\nJump Distance: 0\n",
+            "Make sure you bake a Navigation Mesh (NavMesh) in Unity before continuing (Window > Navigation).  When you "+
+            "are done, click \"Update Navmesh Data\" below.  This will update the graphic of the playable area "+
+            "that the player will see in-game.\n",
             wrap);
 
         ViveNavMesh mesh = (ViveNavMesh)target;
+
+        SerializedProperty p_area = serializedObject.FindProperty("_NavAreaMask");
+        string[] areas = GameObjectUtility.GetNavMeshAreaNames();
+        int[] area_index = new int[areas.Length];
+        int temp_mask = 0;
+        for (int x = 0; x < areas.Length; x++)
+        {
+            area_index[x] = GameObjectUtility.GetNavMeshAreaFromName(areas[x]);
+            temp_mask |= ((p_area.intValue >> area_index[x]) & 1) << x;
+        }
+        EditorGUI.BeginChangeCheck();
+        temp_mask = EditorGUILayout.MaskField("Area Mask", temp_mask, areas);
+        if(EditorGUI.EndChangeCheck())
+        {
+            p_area.intValue = 0;
+            for(int x=0; x<areas.Length; x++)
+                p_area.intValue |= ((temp_mask >> x) & 1) << area_index[x];
+
+            serializedObject.ApplyModifiedProperties();
+        }
 
         bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || mesh.SelectableMeshBorder.Length != 0;
 
@@ -33,7 +53,10 @@ public class ViveNavMeshEditor : Editor {
         {
             Undo.RecordObject(mesh, "Update Navmesh Data");
 
-            mesh.SelectableMesh = ConvertNavmeshToMesh(NavMesh.CalculateTriangulation(), 0);
+            NavMeshTriangulation tri = NavMesh.CalculateTriangulation();
+            int vert_size, tri_size;
+            CullNavmeshTriangulation(ref tri, p_area.intValue, out vert_size, out tri_size);
+            mesh.SelectableMesh = ConvertNavmeshToMesh(tri, vert_size, tri_size);
             mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
 
             EditorUtility.SetDirty(mesh.gameObject);
@@ -59,21 +82,101 @@ public class ViveNavMeshEditor : Editor {
         mesh.GroundAlpha = EditorGUILayout.Slider("Ground Alpha", mesh.GroundAlpha, 0, 1);
     }
 
+    /// \brief Modifies the given NavMesh so that only the Navigation areas are present in the mesh.  This is done only 
+    ///        by swapping, so that no new memory is allocated.
+    /// 
+    /// The data stored outside of the returned array sizes should be considered invalid and will contain garbage data.
+    /// \param navMesh NavMesh data to modify
+    /// \param area Area mask to include in returned mesh.  Areas outside of this mask are culled.
+    /// \param vert_size New size of navMesh.vertices
+    /// \param tri_size New size of navMesh.areas and one third of the size of navMesh.indices
+    private static void CullNavmeshTriangulation(ref NavMeshTriangulation navMesh, int area, out int vert_size, out int tri_size)
+    {
+        // Step 1: re-order triangles so that valid areas are in front.  Then determine tri_size.
+        tri_size = navMesh.indices.Length / 3;
+        for(int i=0; i < tri_size; i++)
+        {
+            Vector3 p1 = navMesh.vertices[navMesh.indices[i * 3]];
+            Vector3 p2 = navMesh.vertices[navMesh.indices[i * 3 + 1]];
+            Vector3 p3 = navMesh.vertices[navMesh.indices[i * 3 + 2]];
+            Plane p = new Plane(p1, p2, p3);
+            bool vertical = Mathf.Abs(Vector3.Dot(p.normal, Vector3.up)) > 0.95f;
+
+            if(((1 << navMesh.areas[i]) & area) == 0 || !vertical) // No matching areas, this triangle should be culled.
+            {
+                // Swap area indices and triangle indices with the end of the array
+                int t_ind = tri_size - 1;
+
+                int t_area = navMesh.areas[t_ind];
+                navMesh.areas[t_ind] = navMesh.areas[i];
+                navMesh.areas[i] = t_area;
+
+                for(int j=0;j<3;j++)
+                {
+                    int t_v = navMesh.indices[t_ind * 3 + j];
+                    navMesh.indices[t_ind * 3 + j] = navMesh.indices[i * 3 + j];
+                    navMesh.indices[i * 3 + j] = t_v;
+                }
+
+                // Then reduce the size of the array, effectively cutting off the previous triangle
+                tri_size--;
+                // Stay on the same index so that we can check the triangle we just swapped.
+                i--;
+            }
+        }
+
+        // Step 2: Cull the vertices that aren't used.
+        vert_size = 0;
+        for(int i=0; i < tri_size * 3; i++)
+        {
+            int prv = navMesh.indices[i];
+            if (prv >= vert_size)
+            {
+                int nxt = vert_size;
+
+                // Bring the current vertex to the end of the "active" array by swapping it with what's currently there
+                Vector3 t_v = navMesh.vertices[prv];
+                navMesh.vertices[prv] = navMesh.vertices[nxt];
+                navMesh.vertices[nxt] = t_v;
+
+                // Now change around the values in the triangle indices to reflect the swap
+                for(int j=i; j < tri_size * 3; j++)
+                {
+                    if (navMesh.indices[j] == prv)
+                        navMesh.indices[j] = nxt;
+                    else if (navMesh.indices[j] == nxt)
+                        navMesh.indices[j] = prv;
+                }
+
+                // Increase the size of the vertex array to reflect the changes.
+                vert_size++;
+            }
+        }
+    }
+
     /// \brief Converts a NavMesh (or a NavMesh area) into a standard Unity mesh.  This is later used
     ///        to render the mesh on-screen using Unity's standard rendering tools.
     /// 
     /// \param navMesh Precalculated Nav Mesh Triangulation
-    /// \param area area to consider in calculation
-    private static Mesh ConvertNavmeshToMesh(NavMeshTriangulation navMesh, int area)
+    /// \param vert_size size of vertex array
+    /// \param tri_size size of triangle array
+    private static Mesh ConvertNavmeshToMesh(NavMeshTriangulation navMesh, int vert_size, int tri_size)
     {
         Mesh ret = new Mesh();
 
-        Vector3[] vertices = new Vector3[navMesh.vertices.Length];
-        for (int x = 0; x < vertices.Length; x++)
-            // Note: Unity navmesh is offset 0.05m from the ground.  This pushes it down to 0.005m (to avoid zfighting, but be closer to the ground)
-            vertices[x] = navMesh.vertices[x] + Vector3.up * -0.045f;
+        if(vert_size >= 65535)
+        {
+            Debug.LogError("Playable NavMesh too big (vertex count >= 65535)!  Limit the size of the playable area using"+
+                "Area Masks.  For now no preview mesh will render.");
+            return ret;
+        }
 
-        int[] triangles = new int[navMesh.indices.Length];
+        Vector3[] vertices = new Vector3[vert_size];
+        for (int x = 0; x < vertices.Length; x++)
+            // Note: Unity navmesh is offset 0.05m from the ground.  This pushes it down to 0
+            vertices[x] = navMesh.vertices[x];
+
+        int[] triangles = new int[tri_size * 3];
         for (int x = 0; x < triangles.Length; x++)
             triangles[x] = navMesh.indices[x];
 

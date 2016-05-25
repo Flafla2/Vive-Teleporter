@@ -11,7 +11,7 @@ NavMeshAreas:
     cost: 1
   - name: Jump
     cost: 2
-  - name: 
+  - name: AI Only
     cost: 1
   - name: 
     cost: 1

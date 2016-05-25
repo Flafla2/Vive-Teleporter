@@ -57,6 +57,9 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     [SerializeField] [HideInInspector] [FormerlySerializedAs("_Serialized")]
     private SerializableMultiDim _SerializedBorder;
 
+    [SerializeField] [HideInInspector]
+    private int _NavAreaMask = ~0; // Initialize to all
+
     private BorderRenderer Border;
 
     private Dictionary<Camera, CommandBuffer> cameras = new Dictionary<Camera, CommandBuffer>();
