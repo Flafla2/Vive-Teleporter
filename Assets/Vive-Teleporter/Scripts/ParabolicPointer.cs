@@ -15,8 +15,6 @@ public class ParabolicPointer : MonoBehaviour {
     public int PointCount = 10;
     [Tooltip("Approximate spacing between each of the points on the parabola mesh.")]
     public float PointSpacing = 0.5f;
-    [Tooltip("World-space height of the ground in-game")]
-    public float GroundHeight = 0;
     [Tooltip("Thickness of the parabola mesh")]
     public float GraphicThickness = 0.2f;
     [Tooltip("Material to use to render the parabola mesh")]
@@ -75,7 +73,7 @@ public class ParabolicPointer : MonoBehaviour {
     // points: number of sample points
     // gnd: height of the ground, in meters above y=0
     // outPts: List that will be populated by new points
-    private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, float gnd, List<Vector3> outPts)
+    private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, ViveNavMesh nav, List<Vector3> outPts)
     {
         outPts.Clear();
         outPts.Add(p0);
@@ -87,9 +85,12 @@ public class ParabolicPointer : MonoBehaviour {
         {
             t += dist / ParabolicCurveDeriv(v0, a, t).magnitude;
             Vector3 next = ParabolicCurve(p0, v0, a, t);
-            if (next.y < gnd)
+
+            Vector3 castHit;
+            float cast = nav.Raycast(last, next, out castHit);
+            if (cast != -1)
             {
-                outPts.Add(Vector3.Lerp(last, next, (gnd - last.y) / (next.y - last.y)));
+                outPts.Add(castHit);
                 return true;
             }
             else
@@ -179,29 +180,16 @@ public class ParabolicPointer : MonoBehaviour {
         Vector3 velocity_normalized;
         CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
-        CalculateParabolicCurve(
+        PointOnNavMesh = CalculateParabolicCurve(
             transform.position,
             velocity,
             Acceleration, PointSpacing, PointCount,
-            GroundHeight,
+            NavMesh,
             ParabolaPoints);
 
         SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
 
-        // 2. Find endpoint of parabola on navmesh
-        PointOnNavMesh = true;
-        if(NavMesh != null)
-        {
-            Vector3 rayorigin = SelectedPoint;
-            rayorigin.y = GroundHeight + 1;
-            float cast = NavMesh.Raycast(new Ray(rayorigin, Vector3.down));
-
-            PointOnNavMesh = cast > 0;
-            if(PointOnNavMesh)
-                SelectedPoint = rayorigin + Vector3.down * cast;
-        }
-
-        // 3. Render Parabola graphics
+        // 2. Render Parabola graphics
         // Make sure that there is actually a point on the navmesh, and that all requisite art is available
         bool ShouldDrawMarker = PointOnNavMesh && SelectionPadMesh != null
             && SelectionPadFadeMaterial != null && SelectionPadBottomMaterial != null && 
@@ -286,7 +274,7 @@ public class ParabolicPointer : MonoBehaviour {
             transform.position, 
             velocity, 
             Acceleration, PointSpacing, PointCount, 
-            GroundHeight,
+            NavMesh,
             ParabolaPoints_Gizmo);
 
         Gizmos.color = Color.blue;

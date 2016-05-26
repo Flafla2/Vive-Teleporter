@@ -146,77 +146,40 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             AlphaShaderID = Shader.PropertyToID("_Alpha");
     }
 
-    /// \brief Casts a ray against the contents of this mesh (in world space)
+    /// \brief Samples a point on the NavMesh.  Returns the closest point or nothing if outside the specified range.
     /// 
-    /// \param ray The ray to cast against the navmesh, in world space
+    /// \param p1 First (origin) point of ray
+    /// \param p2 Last (end) point of ray
+    /// \param hitPoint If hit, the point of the hit.  Otherwise zero.
+    /// \param march The raycast loop marches a point along the ray - this point actually samples the mesh.  The greater this value is, the more samples we take.
     /// 
     /// \return -1 if no hit, or the distance along the ray of the hit
-    public float Raycast(Ray ray)
+    public float Raycast(Vector3 p1, Vector3 p2, out Vector3 hitPoint, int march = 4)
     {
-        if (SelectableMesh == null)
-            return -1;
+        Vector3 dir = p2 - p1;
+        float dist = dir.magnitude;
+        dir /= dist;
 
-        for(int x=0;x< SelectableMesh.triangles.Length/3;x++)
+        float march_step = dist / march;
+        float cur_march = march_step / 2;
+        for(int x=0; x < march; x++)
         {
-            Vector3 p1 = SelectableMesh.vertices[SelectableMesh.triangles[x*3  ]];
-            Vector3 p2 = SelectableMesh.vertices[SelectableMesh.triangles[x*3+1]];
-            Vector3 p3 = SelectableMesh.vertices[SelectableMesh.triangles[x*3+2]];
+            NavMeshHit hit;
+            bool didHit = NavMesh.SamplePosition(p1 + dir * cur_march, out hit, march_step / 2, _NavAreaMask);
+            if(didHit)
+            {
+                Vector3 sample_dir = hit.position - p1;
+                float sample_dist = sample_dir.magnitude;
+                sample_dir /= sample_dist;
 
-            float i = Intersect(p1, p2, p3, ray);
-            if (i > 0)
-                return i;
+                hitPoint = hit.position;
+                return sample_dist;
+            }
+            cur_march += march_step;
         }
+
+        hitPoint = Vector3.zero;
         return -1;
-    }
-
-    /// \brief  Checks if the specified ray hits the triangle descibed by p1, p2 and p3.
-    ///         Möller–Trumbore ray-triangle intersection algorithm implementation.
-    ///         
-    /// \param p1 Point 1 of triangle
-    /// \param p2 Point 2 of triangle
-    /// \param p3 Point 3 of triangle
-    ///
-    /// Adapted From: http://answers.unity3d.com/questions/861719/a-fast-triangle-triangle-intersection-algorithm-fo.html
-    private static float Intersect(Vector3 p1, Vector3 p2, Vector3 p3, Ray ray)
-    {
-        // Vectors from p1 to p2/p3 (edges)
-        Vector3 e1 = p2 - p1;
-        Vector3 e2 = p3 - p1;
-
-        Vector3 p, q, t;
-        float det, invDet, u, v;        
-
-        // calculating determinant 
-        p = Vector3.Cross(ray.direction, e2);
-        det = Vector3.Dot(e1, p);
-
-        //if determinant is near zero, ray lies in plane of triangle otherwise not
-        if (det > -Mathf.Epsilon && det < Mathf.Epsilon) { return -1; }
-        invDet = 1.0f / det;
-
-        //calculate distance from p1 to ray origin
-        t = ray.origin - p1;
-
-        //Calculate u parameter
-        u = Vector3.Dot(t, p) * invDet;
-
-        //Check for ray hit
-        if (u < 0 || u > 1) { return -1; }
-
-        //Prepare to test v parameter
-        q = Vector3.Cross(t, e1);
-
-        //Calculate v parameter
-        v = Vector3.Dot(ray.direction, q) * invDet;
-
-        //Check for ray hit
-        if (v < 0 || u + v > 1) { return -1; }
-
-        float dist = Vector3.Dot(e2, q) * invDet;
-        if (dist <= Mathf.Epsilon)
-            return -1;
-
-        return dist;
     }
 
     public void OnBeforeSerialize()
