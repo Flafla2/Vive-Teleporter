@@ -47,7 +47,20 @@ public class ViveNavMeshEditor : Editor {
             serializedObject.ApplyModifiedProperties();
         }
 
-        bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || mesh.SelectableMeshBorder.Length != 0;
+        bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || (mesh.SelectableMeshBorder != null && mesh.SelectableMeshBorder.Length != 0);
+
+        bool MeshNull = mesh.SelectableMesh == null;
+        bool BorderNull = mesh.SelectableMeshBorder == null;
+        if (MeshNull || BorderNull) {
+            string str = "Internal Error: ";
+            if (MeshNull)
+                str += "Selectable Mesh == null.  ";
+            if (BorderNull)
+                str += "Border point array == null.  ";
+            str += "This may lead to strange behavior or serialization.  Try updating the mesh or delete and recreate the Navmesh object.  ";
+            str += "If you are able to consistently get a Vive Nav Mesh object into this state, please submit a bug report.";
+            EditorGUILayout.HelpBox(str, MessageType.Error);
+        }
 
         if (GUILayout.Button("Update Navmesh Data"))
         {
@@ -100,9 +113,11 @@ public class ViveNavMeshEditor : Editor {
             Vector3 p2 = navMesh.vertices[navMesh.indices[i * 3 + 1]];
             Vector3 p3 = navMesh.vertices[navMesh.indices[i * 3 + 2]];
             Plane p = new Plane(p1, p2, p3);
-            bool vertical = Mathf.Abs(Vector3.Dot(p.normal, Vector3.up)) > 0.95f;
+            bool vertical = Mathf.Abs(Vector3.Dot(p.normal, Vector3.up)) > 0.99f;
 
-            if(((1 << navMesh.areas[i]) & area) == 0 || !vertical) // No matching areas, this triangle should be culled.
+            // If the current triangle isn't flat (normal is up) or if it doesn't match
+            // with the provided mask, we should cull it.
+            if(((1 << navMesh.areas[i]) & area) == 0 || !vertical) // If true this triangle should be culled.
             {
                 // Swap area indices and triangle indices with the end of the array
                 int t_ind = tri_size - 1;

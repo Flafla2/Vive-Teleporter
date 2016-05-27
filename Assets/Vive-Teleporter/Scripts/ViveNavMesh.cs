@@ -65,6 +65,11 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     private Dictionary<Camera, CommandBuffer> cameras = new Dictionary<Camera, CommandBuffer>();
 
     void Start () {
+        if (SelectableMesh == null)
+            SelectableMesh = new Mesh();
+        if (_SelectableMeshBorder == null)
+            _SelectableMeshBorder = new Vector3[0][];
+
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
 
@@ -184,7 +189,12 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     public void OnBeforeSerialize()
     {
+        if (_SelectableMeshBorder == null)
+            _SelectableMeshBorder = new Vector3[0][];
         _SerializedBorder = new SerializableMultiDim(_SelectableMeshBorder);
+
+        if (SelectableMesh == null)
+            SelectableMesh = new Mesh();
     }
 
     public void OnAfterDeserialize()
