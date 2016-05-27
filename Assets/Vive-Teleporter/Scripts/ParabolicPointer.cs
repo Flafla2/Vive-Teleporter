@@ -87,17 +87,19 @@ public class ParabolicPointer : MonoBehaviour {
             Vector3 next = ParabolicCurve(p0, v0, a, t);
 
             Vector3 castHit;
-            bool cast = nav.Raycast(last, next, out castHit);
+            bool endOnNavmesh;
+            bool cast = nav.Linecast(last, next, out endOnNavmesh, out castHit);
             if (cast)
             {
                 outPts.Add(castHit);
-                return true;
+                return endOnNavmesh;
             }
             else
                 outPts.Add(next);
 
             last = next;
         }
+
 
         return false;
     }
