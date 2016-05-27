@@ -151,40 +151,80 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
             AlphaShaderID = Shader.PropertyToID("_Alpha");
     }
 
-    /// \brief Samples a point on the NavMesh.  Returns the closest point or nothing if outside the specified range.
+    /// \brief Casts a ray against the Navmesh and attempts to calculate the ray's worldspace intersection with it.
+    /// 
+    /// There are some limitations to this method:
+    /// - It assumes that all surfaces on the navmesh point upwards (normal == Vector3.up)
+    /// - It assumes that at most the line will "possibly" intersect two planes (that is only two planes are close
+    ///   to the endpoints)
     /// 
     /// \param p1 First (origin) point of ray
     /// \param p2 Last (end) point of ray
     /// \param hitPoint If hit, the point of the hit.  Otherwise zero.
-    /// \param march The raycast loop marches a point along the ray - this point actually samples the mesh.  The greater this value is, the more samples we take.
     /// 
-    /// \return -1 if no hit, or the distance along the ray of the hit
-    public float Raycast(Vector3 p1, Vector3 p2, out Vector3 hitPoint, int march = 4)
+    /// \return If the raycast hit something.
+    public bool Raycast(Vector3 p1, Vector3 p2, out Vector3 hitPoint)
     {
-        Vector3 dir = p2 - p1;
-        float dist = dir.magnitude;
-        dir /= dist;
+        Vector3 diff = p2 - p1;
+        float dist = diff.magnitude;
+        Vector3 dir = diff / dist;
 
-        float march_step = dist / march;
-        float cur_march = march_step / 2;
-        for(int x=0; x < march; x++)
+        NavMeshHit s1, s2;
+        bool v1 = NavMesh.SamplePosition(p1, out s1, dist, _NavAreaMask);
+        bool v2 = NavMesh.SamplePosition(p2, out s2, dist, _NavAreaMask);
+
+        float ycoord, alpha;
+        bool i;
+        // First attempt the plane closest to the first point.
+        if(v1)
         {
-            NavMeshHit hit;
-            bool didHit = NavMesh.SamplePosition(p1 + dir * cur_march, out hit, march_step / 2, _NavAreaMask);
-            if(didHit)
-            {
-                Vector3 sample_dir = hit.position - p1;
-                float sample_dist = sample_dir.magnitude;
-                sample_dir /= sample_dist;
-
-                hitPoint = hit.position;
-                return sample_dist;
-            }
-            cur_march += march_step;
+            ycoord = s1.position.y;
+            i = TryIntersectPlane(ycoord, p1, p2, s1.position, s2.position, out hitPoint, out alpha);
+            if (i)
+                return true;
         }
 
+        // If the first point is invalid (no intersection) then try the second point
+        if(v2)
+        {
+            ycoord = s2.position.y;
+            i = TryIntersectPlane(ycoord, p1, p2, s1.position, s2.position, out hitPoint, out alpha);
+            if (i)
+                return true;
+        }
+
+        // Neither attempt intersected, so there is no intersection.
         hitPoint = Vector3.zero;
-        return -1;
+        return false;
+    }
+
+    private bool TryIntersectPlane(float plane_y, Vector3 p1, Vector3 p2, Vector3 h1, Vector3 h2, out Vector3 point, out float alpha)
+    {
+        bool p1_side = p1.y < plane_y;
+        bool p2_side = p2.y < plane_y;
+        if (p1_side == p2_side)
+        {
+            point = Vector3.zero;
+            alpha = 0;
+            return false;
+        }
+
+        float y1 = Mathf.Abs(p1.y - plane_y);
+        float y2 = Mathf.Abs(p2.y - plane_y);
+        float a = y1 / (y1 + y2);
+
+        Vector3 ret = Vector3.Lerp(new Vector3(p1.x,plane_y,p1.z), new Vector3(p2.x,plane_y,p2.z), a);
+        NavMeshHit hit;
+        if (!NavMesh.SamplePosition(ret, out hit, 0.05f, _NavAreaMask))
+        {
+            point = Vector3.zero;
+            alpha = 0;
+            return false;
+        }
+
+        point = ret;
+        alpha = a;
+        return true;
     }
 
     public void OnBeforeSerialize()
