@@ -124,7 +124,7 @@ public class ViveNavMesh : MonoBehaviour
         }
 
         // If _SelectableMesh == null there is a crash in Unity 5.4 beta (apparently you can't pass null to CommandBuffer::DrawMesh now).
-        if (!_SelectableMesh)
+        if (!_SelectableMesh || !GroundMaterial)
             return;
 
         var cam = Camera.current;
