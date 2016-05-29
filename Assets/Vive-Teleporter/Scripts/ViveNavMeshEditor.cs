@@ -57,7 +57,8 @@ public class ViveNavMeshEditor : Editor {
         {
             p_area.intValue = 0;
             for(int x=0; x<areas.Length; x++)
-                p_area.intValue |= ((temp_mask >> x) & 1) << area_index[x];
+                p_area.intValue |= (((temp_mask >> x) & 1) == 1 ? 0 : 1) << area_index[x];
+            p_area.intValue = ~p_area.intValue;
         }
         serializedObject.ApplyModifiedProperties();
 

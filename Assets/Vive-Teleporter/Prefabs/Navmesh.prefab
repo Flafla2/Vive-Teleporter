@@ -76,8 +76,8 @@ MonoBehaviour:
   _GroundMaterial: {fileID: 2100000, guid: 61ccb656016c9b44b8a49c327ee084a4, type: 2}
   GroundAlpha: 1
   _SelectableMesh: {fileID: 0}
-  _SelectableMeshBorder:
-  _NavAreaMask: 7
+  _SelectableMeshBorder: []
+  _NavAreaMask: -1
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1
