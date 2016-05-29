@@ -64,8 +64,14 @@ public class ViveNavMeshEditor : Editor {
         // Sanity check for Null properties //
         bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || (mesh.SelectableMeshBorder != null && mesh.SelectableMeshBorder.Length != 0);
 
+        // Fixes below error message popping up with prefabs.  Kind of hacky but gets the job done
+        bool isPrefab = EditorUtility.IsPersistent(target);
+        if (isPrefab && mesh.SelectableMesh == null)
+            mesh.SelectableMesh = new Mesh();
+
         bool MeshNull = mesh.SelectableMesh == null;
         bool BorderNull = mesh.SelectableMeshBorder == null;
+
         if (MeshNull || BorderNull) {
             string str = "Internal Error: ";
             if (MeshNull)
