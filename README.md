@@ -17,7 +17,7 @@ The system presented here solves a number of problems:
    click the "Update Navmesh Data" button in the inspector.  You can of course update the Vive Nav Mesh component with
    new NavMesh bakes whenever you update the scene.  The above process is illustrated below:
    
-   [![Updating the NavMesh](https://thumbs.gfycat.com/WelldocumentedForcefulAlaskanmalamute-size_restricted.gif)](https://gfycat.com/WelldocumentedForcefulAlaskanmalamute)
+   [![Updating the NavMesh](https://thumbs.gfycat.com/SorrowfulThriftyAfricanpiedkingfisher-size_restricted.gif)](https://gfycat.com/SorrowfulThriftyAfricanpiedkingfisher)
 2. **Selecting a Teleport Destination**: This system uses an intuitive parabolic curve selection mechanism using simple
    kinematic equations.  Once again, this was inspired by Valve's *The Lab*.  As the user raises their controller to a
    higher angle, the selection point grows farther away.  If the user raises the remote past 45 degrees (maximum
