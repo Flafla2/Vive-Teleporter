@@ -13,23 +13,11 @@ The system presented here solves a number of problems:
 1. **Calculating Navigable Space**: You obviously don't want the player to be able to teleport out of bounds, or inside
    opaque objects.  To solve this problem, my system uses Unity's generated Navigation Mesh as the boundaries that the
    player can teleport to.  Because this process is piggybacking Unity's work, it is stable and can be used reliably
-   in most projects.  In order to preload this data, you must:
-
-   * Change the Navigation settings in Unity to something that makes sense for Vive locomotion (for example, set Max
-     Slope to zero because the player can't walk up slopes).
-   * Bake the Navigation Mesh in Unity
-   * Add a "Vive Nav Mesh" component anywhere in your scene, and click the "Update Navmesh Data" button in the
-     inspector
-   * Change your Navigation settings back to their original values and rebake (to be used for other things like AI,
-     etc.)
-
-   You can of course update the Vive Nav Mesh component with new NavMesh bakes whenever you update the scene.  The above process is illustrated below:
+   in most projects.  In order to preload this data, simply add a "Vive Nav Mesh" component anywhere in your scene, and
+   click the "Update Navmesh Data" button in the inspector.  You can of course update the Vive Nav Mesh component with
+   new NavMesh bakes whenever you update the scene.  The above process is illustrated below:
    
    [![Updating the NavMesh](https://thumbs.gfycat.com/WelldocumentedForcefulAlaskanmalamute-size_restricted.gif)](https://gfycat.com/WelldocumentedForcefulAlaskanmalamute)
-
-   It's worth mentioning that this whole process could be automated completely if Unity exposed Navigation settings
-   to editor scripts (currently it does not do this).  If you want to help this project a bit, **please [vote on this
-   page on Unity Feedback](https://feedback.unity3d.com/suggestions/expose-navigation-settings-to-editor-scripts)**!
 2. **Selecting a Teleport Destination**: This system uses an intuitive parabolic curve selection mechanism using simple
    kinematic equations.  Once again, this was inspired by Valve's *The Lab*.  As the user raises their controller to a
    higher angle, the selection point grows farther away.  If the user raises the remote past 45 degrees (maximum
@@ -39,7 +27,7 @@ The system presented here solves a number of problems:
 4. **Reducing Discomfort**: The screen fades in and fades out upon teleportation (the display "blinks"), reducing
    fatigue and nausea for the user.
 
-Provided in this Unity project (version 5.3.4p4) are two sample scenes: one is integrated directly with SteamVR and one
+Provided in this Unity project (version 5.3.4p6) are two sample scenes: one is integrated directly with SteamVR and one
 may be used to demo the system if you don't own or have access to an HTC Vive.  The source code is well documented and
 commented and may be used following the MIT Licence (see LICENSE.txt).
 
@@ -62,34 +50,35 @@ the SteamVR play area.
 
 ### Step 1: Configure the Vive Nav Mesh
 
-![Vive Nav Mesh](http://i.imgur.com/20E3qdT.png)
+![Vive Nav Mesh](http://i.imgur.com/E5Orngz.png)
 
 Start by adding a *Vive Nav Mesh* object.  You can find a preconfigured Vive Nav Mesh at the path:
 *Vive-Teleporter/Prefabs/Navmesh.prefab* in your Assets folder.  You can put this object anywhere in your scene's
 heirarchy and at any position in the scene.
 
 Next you need to bake a Navigation mesh ("Navmesh") in Unity.  This can be done in the Navigation window (Window >
-Navigation).  If you already have baked a Navmesh for other purposes (AI for example) you should write down the
-Navigation settings you had previously (you can rebake the mesh with your old settings later).  I recommend these
-settings:
+Navigation).
 
-- Agent Radius: 0.25
-- Agent Height: 2
-- Max Slope: 0
-- Step Height: 0
-- Drop Height: 0
-- Jump Distance: 0
-
-The above settings all ensure that the generated Navmesh will not have any slopes or off-mesh links (which don't make
-any sense in roomscale VR, where the player navigates on a horizontal plane).
+Here are a few more considerations to keep in mind:
+- **The system automatically culls sloped navmesh triangles.**  This means that any parts of the navigation mesh that
+  aren't facing directly upwards are disregarded by the teleportation system.  This makes sense in VR, because the player
+  can't actually walk up slopes!
+- **You must use physics colliders on all teleportable surfaces.**  The parabolic pointer (see step 2 below) uses physics
+  raycasts to determine where the player is pointing.  Because of this all teleportable surfaces must have a collider
+  (as well as surfaces like walls that aren't teleportable but block the pointer anyway).
+- It might also be a good idea to **assign different [Navigation Areas](http://docs.unity3d.com/Manual/nav-AreasAndCosts.html)**
+  to areas that are not teleportable.  This is helpful for optimization reasons (so that the system doesn't need to render
+  an enormous preview mesh when the player chooses where to teleport) and for game balance reasons (so that the player can't
+  teleport outside of the map).
 
 After you have baked the Navmesh (using the "Bake" button at the bottom of the Navigation window) go back to the *Vive
-Nav Mesh* object you created earlier.  Click on the "Update Navmesh Data" button in the inspector and you should see
-your Navigation mesh display in the Scene View.
+Nav Mesh* object you created earlier.  If you have decided to assign specialized Navigation Areas (see above) you can 
+choose which areas are teleportable with the *Area Mask* property.  Then, click on the "Update Navmesh Data" button in
+the inspector and you should see your Navigation mesh display in the Scene View.
 
 ### Step 2: Configure the Parabolic Pointer
 
-![Parabolic Pointer](http://i.imgur.com/iS8N2yq.png)
+![Parabolic Pointer](http://i.imgur.com/00oBrOm.png)
 
 Next add a *Parabolic Pointer* object.  You can find a preconfigured Pointer at the path:
 *Vive-Teleporter/Prefabs/Pointer.prefab* in your Assets folder.  You can put this object anywhere in your scene's
@@ -97,8 +86,6 @@ heirarchy and at any position in the scene.
 
 You can of course tweak any of the settings in the Parabolic Pointer script, but you only *have* to set one of them: 
 assign the *Vive Nav Mesh* object from Step 1 to the "Nav Mesh" property of the Pointer.
-
-**Important: The system only supports one ground height at this time.**  You can change this ground height using the *Ground Height* property of a *Parabolic Pointer* component.  You can also change this value in scripting, if you want to change the height during discrete events (for example, an elevator).
 
 ### Step 3: Configure the Vive Teleporter
 
