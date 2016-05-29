@@ -9,6 +9,19 @@ using System.Collections.Generic;
 [CustomEditor(typeof(ViveNavMesh))]
 public class ViveNavMeshEditor : Editor {
 
+    private SerializedProperty p_area;
+    private SerializedProperty p_mesh;
+    private SerializedProperty p_material;
+    private SerializedProperty p_alpha;
+
+    void OnEnable()
+    {
+        p_area = serializedObject.FindProperty("_NavAreaMask");
+        p_mesh = serializedObject.FindProperty("_SelectableMesh");
+        p_material = serializedObject.FindProperty("_GroundMaterial");
+        p_alpha = serializedObject.FindProperty("GroundAlpha");
+    }
+
     public override void OnInspectorGUI()
     {
         GUIStyle bold_wrap = EditorStyles.boldLabel;
@@ -27,7 +40,9 @@ public class ViveNavMeshEditor : Editor {
 
         ViveNavMesh mesh = (ViveNavMesh)target;
 
-        SerializedProperty p_area = serializedObject.FindProperty("_NavAreaMask");
+        serializedObject.Update();
+
+        // Area Mask //
         string[] areas = GameObjectUtility.GetNavMeshAreaNames();
         int[] area_index = new int[areas.Length];
         int temp_mask = 0;
@@ -43,10 +58,10 @@ public class ViveNavMeshEditor : Editor {
             p_area.intValue = 0;
             for(int x=0; x<areas.Length; x++)
                 p_area.intValue |= ((temp_mask >> x) & 1) << area_index[x];
-
-            serializedObject.ApplyModifiedProperties();
         }
+        serializedObject.ApplyModifiedProperties();
 
+        // Sanity check for Null properties //
         bool HasMesh = (mesh.SelectableMesh != null && mesh.SelectableMesh.vertexCount != 0) || (mesh.SelectableMeshBorder != null && mesh.SelectableMeshBorder.Length != 0);
 
         bool MeshNull = mesh.SelectableMesh == null;
@@ -62,6 +77,7 @@ public class ViveNavMeshEditor : Editor {
             EditorGUILayout.HelpBox(str, MessageType.Error);
         }
 
+        // Update / Clear Navmesh Data //
         if (GUILayout.Button("Update Navmesh Data"))
         {
             Undo.RecordObject(mesh, "Update Navmesh Data");
@@ -69,10 +85,15 @@ public class ViveNavMeshEditor : Editor {
             NavMeshTriangulation tri = NavMesh.CalculateTriangulation();
             int vert_size, tri_size;
             CullNavmeshTriangulation(ref tri, p_area.intValue, out vert_size, out tri_size);
-            mesh.SelectableMesh = ConvertNavmeshToMesh(tri, vert_size, tri_size);
-            mesh.SelectableMeshBorder = FindBorderEdges(mesh.SelectableMesh);
 
-            EditorUtility.SetDirty(mesh.gameObject);
+            Mesh m = ConvertNavmeshToMesh(tri, vert_size, tri_size);
+            // Can't use SerializedProperties here because BorderPointSet doesn't derive from UnityEngine.Object
+            mesh.SelectableMeshBorder = FindBorderEdges(m);
+
+            serializedObject.Update();
+            p_mesh.objectReferenceValue = m;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            mesh.SelectableMesh = mesh.SelectableMesh; // Make sure that setter is called
         }
 
         GUI.enabled = HasMesh;
@@ -81,18 +102,32 @@ public class ViveNavMeshEditor : Editor {
             Undo.RecordObject(mesh, "Clear Navmesh Data");
 
             // Note: Unity does not serialize "null" correctly so we set everything to empty objects
-            mesh.SelectableMesh = new Mesh();
-            mesh.SelectableMeshBorder = new Vector3[0][];
+            Mesh m = new Mesh();
 
-            EditorUtility.SetDirty(mesh.gameObject);
+            serializedObject.Update();
+            p_mesh.objectReferenceValue = m;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            mesh.SelectableMesh = mesh.SelectableMesh; // Make sure setter is called
+
+            mesh.SelectableMeshBorder = new BorderPointSet[0];
         }
         GUI.enabled = true;
 
         GUILayout.Label(HasMesh ? "Status: NavMesh Loaded" : "Status: No NavMesh Loaded");
 
+        // Render Settings //
         EditorGUILayout.LabelField("Render Settings", EditorStyles.boldLabel);
-        mesh.GroundMaterial = (Material)EditorGUILayout.ObjectField("Ground Material", mesh.GroundMaterial, typeof(Material), false);
-        mesh.GroundAlpha = EditorGUILayout.Slider("Ground Alpha", mesh.GroundAlpha, 0, 1);
+
+        EditorGUI.BeginChangeCheck();
+        EditorGUILayout.PropertyField(p_material);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(mesh, "Change Ground Material");
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            mesh.GroundMaterial = mesh.GroundMaterial; // Reload material
+        }
+
+        EditorGUILayout.PropertyField(p_alpha);
     }
 
     /// \brief Modifies the given NavMesh so that only the Navigation areas are present in the mesh.  This is done only 
@@ -263,7 +298,7 @@ public class ViveNavMeshEditor : Editor {
     ///
     /// \param m input mesh
     /// \returns array of cyclic polylines
-    private static Vector3[][] FindBorderEdges(Mesh m)
+    private static BorderPointSet[] FindBorderEdges(Mesh m)
     {
         // First, get together all the edges in the mesh and find out
         // how many times each edge is used.  Edges that are only used
@@ -331,7 +366,12 @@ public class ViveNavMeshEditor : Editor {
             }
         }
 
-        return ret.ToArray();
+        BorderPointSet[] ret_set = new BorderPointSet[ret.Count];
+        for (int x = 0; x < ret.Count; x++)
+        {
+            ret_set[x] = new BorderPointSet(ret[x]);
+        }
+        return ret_set;
     }
 
     /// Given a list of edges, finds a polyline connected to the edge at index start.

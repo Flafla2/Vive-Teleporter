@@ -22,7 +22,7 @@ public class BorderRenderer : MonoBehaviour {
     private int AlphaShaderID = -1;
 
     /// Polylines that will be drawn.
-    public Vector3[][] Points {
+    public BorderPointSet[] Points {
         get
         {
             return _Points;
@@ -33,7 +33,7 @@ public class BorderRenderer : MonoBehaviour {
             RegenerateMesh();
         }
     }
-    private Vector3[][] _Points;
+    private BorderPointSet[] _Points;
 
     public float BorderHeight
     {
@@ -84,8 +84,13 @@ public class BorderRenderer : MonoBehaviour {
             return;
         }
         CachedMeshes = new Mesh[Points.Length];
-        for(int x=0;x<CachedMeshes.Length;x++)
-            CachedMeshes[x] = GenerateMeshForPoints(Points[x]);
+        for (int x = 0; x < CachedMeshes.Length; x++)
+        {
+            if (Points[x] == null || Points[x].Points == null)
+                CachedMeshes[x] = new Mesh();
+            else
+                CachedMeshes[x] = GenerateMeshForPoints(Points[x].Points);
+        }
     }
 	
 	private Mesh GenerateMeshForPoints(Vector3[] Points)

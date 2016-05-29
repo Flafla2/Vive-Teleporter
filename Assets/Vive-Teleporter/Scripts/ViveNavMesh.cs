@@ -9,7 +9,7 @@ using System.Collections.Generic;
 [AddComponentMenu("Vive Teleporter/Vive Nav Mesh")]
 [RequireComponent(typeof(BorderRenderer))]
 [ExecuteInEditMode]
-public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
+public class ViveNavMesh : MonoBehaviour
 {
     /// Material used for the floor mesh when the user is selecting a point to teleport to
     public Material GroundMaterial
@@ -30,6 +30,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
 
     /// \brief The alpha (transparency) value of the rendered ground mesh)
     /// \sa GroundMaterial
+    [Range(0,1)]
     public float GroundAlpha = 1.0f;
     private float LastGroundAlpha = 1.0f;
     private int AlphaShaderID = -1;
@@ -46,16 +47,15 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
     /// \brief The border points of SelectableMesh.  This is automatically generated in ViveNavMeshEditor.
     /// 
     /// This is an array of Vector3 arrays, where each Vector3 array is the points in a polyline.  These polylines combined
-    /// describe the borders of SelectableMesh.
-    public Vector3[][] SelectableMeshBorder
+    /// describe the borders of SelectableMesh.  We have to use BorderPointSets instead of a jagged Vector3[][] array because
+    /// Unity can't serialize jagged arrays for some reason.
+    public BorderPointSet[] SelectableMeshBorder
     {
         get { return _SelectableMeshBorder; }
         set { _SelectableMeshBorder = value; Border.Points = _SelectableMeshBorder; }
     }
-    private Vector3[][] _SelectableMeshBorder;
-    // Use this to actually serialize SelectableMeshBorder (you can't serialize multidimensional arrays apparently)
-    [SerializeField] [HideInInspector] [FormerlySerializedAs("_Serialized")]
-    private SerializableMultiDim _SerializedBorder;
+    [SerializeField] [HideInInspector]
+    private BorderPointSet[] _SelectableMeshBorder;
 
     [SerializeField] [HideInInspector]
     private int _NavAreaMask = ~0; // Initialize to all
@@ -68,7 +68,7 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         if (SelectableMesh == null)
             SelectableMesh = new Mesh();
         if (_SelectableMeshBorder == null)
-            _SelectableMeshBorder = new Vector3[0][];
+            _SelectableMeshBorder = new BorderPointSet[0];
 
         Border = GetComponent<BorderRenderer>();
         Border.Points = SelectableMeshBorder;
@@ -195,64 +195,15 @@ public class ViveNavMesh : MonoBehaviour, ISerializationCallbackReceiver
         hitPoint = Vector3.zero;
         return false;
     }
+}
 
-    public void OnBeforeSerialize()
+[System.Serializable]
+public class BorderPointSet
+{
+    public Vector3[] Points;
+
+    public BorderPointSet(Vector3[] Points)
     {
-        if (_SelectableMeshBorder == null)
-            _SelectableMeshBorder = new Vector3[0][];
-        _SerializedBorder = new SerializableMultiDim(_SelectableMeshBorder);
-
-        if (SelectableMesh == null)
-            SelectableMesh = new Mesh();
-    }
-
-    public void OnAfterDeserialize()
-    {
-        _SelectableMeshBorder = _SerializedBorder.ToMultiDimArray();
-    }
-
-    [System.Serializable]
-    private class SerializableMultiDim
-    {
-        public int[] startIndex;
-        public int[] lengths;
-        public Vector3[] arr;
-
-        public SerializableMultiDim (Vector3[][] src) {
-            if(src == null || src.Length == 0)
-            {
-                startIndex = new int[0];
-                lengths = new int[0];
-                arr = new Vector3[0];
-                return;
-            }
-
-            startIndex = new int[src.Length];
-            lengths = new int[src.Length];
-            int cur = 0;
-            for (int x = 0; x < src.Length; x++)
-            {
-                startIndex[x] = cur;
-                lengths[x] = src[x].Length;
-                cur += src[x].Length;
-            }
-
-            arr = new Vector3[cur];
-            for (int x = 0; x < src.Length; x++)
-                for (int i = 0; i < src[x].Length; i++)
-                    arr[startIndex[x] + i] = src[x][i];
-        }
-
-        public Vector3[][] ToMultiDimArray()
-        {
-            Vector3[][] ret = new Vector3[startIndex.Length][];
-            for(int x=0;x<ret.Length;x++)
-            {
-                ret[x] = new Vector3[lengths[x]];
-                for (int i = 0; i < ret[x].Length; i++)
-                    ret[x][i] = arr[startIndex[x] + i];
-            }
-            return ret;
-        }
+        this.Points = Points;
     }
 }

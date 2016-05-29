@@ -77,11 +77,12 @@ public class TeleportVive : MonoBehaviour {
         Vector3 p0, p1, p2, p3;
         if (GetChaperoneBounds(out p0, out p1, out p2, out p3))
         {
-            RoomBorder.Points = new Vector3[][]
-            {
-                new Vector3[] {
+            BorderPointSet p = new BorderPointSet(new Vector3[] {
                     p0, p1, p2, p3, p0
-                }
+                });
+            RoomBorder.Points = new BorderPointSet[]
+            {
+                p
             };
         }   
             
