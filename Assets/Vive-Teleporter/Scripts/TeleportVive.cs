@@ -20,6 +20,9 @@ public class TeleportVive : MonoBehaviour {
     [Tooltip("The player feels a haptic pulse in the controller when they raise / lower the controller by this many degrees.  Lower value = faster pulses.")]
     public float HapticClickAngleStep = 10;
 
+    [Tooltip("The axis on the touchpad to use, Vector2(0, 0) means anywhere on the touchpad.")]
+    public Vector2 TouchpadAxis = Vector2.zero;
+
     /// BorderRenderer to render the chaperone bounds (when choosing a location to teleport to)
     private BorderRenderer RoomBorder;
 
@@ -50,6 +53,11 @@ public class TeleportVive : MonoBehaviour {
 
     void Start()
     {
+        if (TouchpadAxis.sqrMagnitude != 0f) 
+        {
+            TouchpadAxis.Normalize();
+        }
+
         // Disable the pointer graphic (until the user holds down on the touchpad)
         Pointer.enabled = false;
 
@@ -227,7 +235,8 @@ public class TeleportVive : MonoBehaviour {
                     continue;
 
                 var device = SteamVR_Controller.Input(index);
-                if (device.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad))
+                if (device.GetPressDown(SteamVR_Controller.ButtonMask.Touchpad) &&
+                    (TouchpadAxis.sqrMagnitude == 0f || Vector2.Dot(TouchpadAxis, device.GetAxis().normalized) >= 0.5f))
                 {
                     // Set active controller to this controller, and enable the parabolic pointer and visual indicators
                     // that the user can use to determine where they are able to teleport.
