@@ -22,8 +22,6 @@ public class BorderRenderer : MonoBehaviour {
     [Tooltip("Layer to render the mesh at.")]
     private int AlphaShaderID = -1;
     
-    public int RenderLayer = 0;
-
     /// Polylines that will be drawn.
     public BorderPointSet[] Points {
         get
@@ -66,7 +64,7 @@ public class BorderRenderer : MonoBehaviour {
         }
 
         foreach (Mesh m in CachedMeshes)
-            Graphics.DrawMesh(m, Transpose, BorderMaterial, RenderLayer, null, 0, null, false, false);
+            Graphics.DrawMesh(m, Transpose, BorderMaterial, gameObject.layer, null, 0, null, false, false);
     }
 
     void OnValidate()
