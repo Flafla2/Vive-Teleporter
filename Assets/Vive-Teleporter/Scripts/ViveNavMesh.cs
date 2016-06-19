@@ -116,7 +116,7 @@ public class ViveNavMesh : MonoBehaviour
     {
         // We have to use command buffers instead of Graphics.DrawMesh because of strange depth issues that I am experiencing
         // with Graphics.Drawmesh (perhaps Graphics.DrawMesh is called before all opaque objects are rendered?)
-        var act = gameObject.activeInHierarchy && enabled && (gameObject.layer & Camera.current.cullingMask) != 0;
+        var act = gameObject.activeInHierarchy && enabled;
         if (!act)
         {
             Cleanup();
@@ -128,7 +128,7 @@ public class ViveNavMesh : MonoBehaviour
             return;
 
         var cam = Camera.current;
-        if (!cam || cam.cameraType == CameraType.Preview)
+        if (!cam || cam.cameraType == CameraType.Preview || ((1 << gameObject.layer) & Camera.current.cullingMask) == 0)
             return;
 
         CommandBuffer buf = null;
