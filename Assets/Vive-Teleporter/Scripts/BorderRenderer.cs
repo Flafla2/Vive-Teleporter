@@ -19,8 +19,9 @@ public class BorderRenderer : MonoBehaviour {
     public float BorderAlpha = 1.0f;
     private float LastBorderAlpha = 1.0f;
 
+    [Tooltip("Layer to render the mesh at.")]
     private int AlphaShaderID = -1;
-
+    
     /// Polylines that will be drawn.
     public BorderPointSet[] Points {
         get
@@ -63,7 +64,7 @@ public class BorderRenderer : MonoBehaviour {
         }
 
         foreach (Mesh m in CachedMeshes)
-            Graphics.DrawMesh(m, Transpose, BorderMaterial, 0, null, 0, null, false, false);
+            Graphics.DrawMesh(m, Transpose, BorderMaterial, gameObject.layer, null, 0, null, false, false);
     }
 
     void OnValidate()

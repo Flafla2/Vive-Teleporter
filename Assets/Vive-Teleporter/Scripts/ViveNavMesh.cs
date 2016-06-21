@@ -128,7 +128,7 @@ public class ViveNavMesh : MonoBehaviour
             return;
 
         var cam = Camera.current;
-        if (!cam || cam.cameraType == CameraType.Preview)
+        if (!cam || cam.cameraType == CameraType.Preview || ((1 << gameObject.layer) & Camera.current.cullingMask) == 0)
             return;
 
         CommandBuffer buf = null;
