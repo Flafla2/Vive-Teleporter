@@ -135,6 +135,7 @@ public class ViveNavMeshEditor : Editor {
         }
 
         EditorGUILayout.PropertyField(p_alpha);
+        serializedObject.ApplyModifiedProperties();
     }
 
     /// \brief Modifies the given NavMesh so that only the Navigation areas are present in the mesh.  This is done only 
