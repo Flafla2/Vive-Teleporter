@@ -77,9 +77,16 @@ public class TeleportVive : MonoBehaviour {
         Vector3 p0, p1, p2, p3;
         if (GetChaperoneBounds(out p0, out p1, out p2, out p3))
         {
+            // Rotate to match camera rig rotation
+            var originRotationMatrix = Matrix4x4.TRS(Vector3.zero, OriginTransform.rotation, Vector3.one);
+
             BorderPointSet p = new BorderPointSet(new Vector3[] {
-                    p0, p1, p2, p3, p0
-                });
+                originRotationMatrix * p0,
+                originRotationMatrix * p1,
+                originRotationMatrix * p2,
+                originRotationMatrix * p3,
+                originRotationMatrix * p0,
+            });
             RoomBorder.Points = new BorderPointSet[]
             {
                 p
