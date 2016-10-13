@@ -14,6 +14,7 @@ public class ViveNavMeshEditor : Editor {
     private SerializedProperty p_material;
     private SerializedProperty p_alpha;
     private SerializedProperty p_layer_mask;
+    private SerializedProperty p_ignore_layer_mask;
     private SerializedProperty p_query_trigger_interaction;
 
     void OnEnable()
@@ -23,6 +24,7 @@ public class ViveNavMeshEditor : Editor {
         p_material = serializedObject.FindProperty("_GroundMaterial");
         p_alpha = serializedObject.FindProperty("GroundAlpha");
         p_layer_mask = serializedObject.FindProperty("_LayerMask");
+        p_ignore_layer_mask = serializedObject.FindProperty("_IgnoreLayerMask");
         p_query_trigger_interaction = serializedObject.FindProperty("_QueryTriggerInteraction");
     }
 
@@ -145,12 +147,20 @@ public class ViveNavMeshEditor : Editor {
         EditorGUILayout.LabelField("Raycast Settings", EditorStyles.boldLabel);
 
         int temp_layer_mask = p_layer_mask.intValue;
+        bool temp_ignore_layer_mask = p_ignore_layer_mask.boolValue;
 
         EditorGUI.BeginChangeCheck();
         temp_layer_mask = EditorGUILayout.LayerField("Layer Mask", temp_layer_mask);
         if(EditorGUI.EndChangeCheck())
         {
             p_layer_mask.intValue = temp_layer_mask;
+        }
+        serializedObject.ApplyModifiedProperties();
+        EditorGUI.BeginChangeCheck();
+        temp_ignore_layer_mask = EditorGUILayout.Toggle("Ignore Layer Mask", temp_ignore_layer_mask);
+        if(EditorGUI.EndChangeCheck())
+        {
+            p_ignore_layer_mask.boolValue = temp_ignore_layer_mask;
         }
         serializedObject.ApplyModifiedProperties();
 
