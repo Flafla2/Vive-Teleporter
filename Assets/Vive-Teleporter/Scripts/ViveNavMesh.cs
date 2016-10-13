@@ -48,7 +48,7 @@ public class ViveNavMesh : MonoBehaviour
         set { _IgnoreLayerMask = value; }
     }
     [SerializeField]
-    private bool _IgnoreLayerMask;
+    private bool _IgnoreLayerMask = true;
 
     public int QueryTriggerInteraction
     {
