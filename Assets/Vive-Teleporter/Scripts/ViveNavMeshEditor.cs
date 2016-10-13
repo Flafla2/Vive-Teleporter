@@ -13,6 +13,7 @@ public class ViveNavMeshEditor : Editor {
     private SerializedProperty p_mesh;
     private SerializedProperty p_material;
     private SerializedProperty p_alpha;
+    private SerializedProperty p_layer_mask;
 
     void OnEnable()
     {
@@ -20,6 +21,7 @@ public class ViveNavMeshEditor : Editor {
         p_mesh = serializedObject.FindProperty("_SelectableMesh");
         p_material = serializedObject.FindProperty("_GroundMaterial");
         p_alpha = serializedObject.FindProperty("GroundAlpha");
+        p_layer_mask = serializedObject.FindProperty("_LayerMask");
     }
 
     public override void OnInspectorGUI()
@@ -140,8 +142,16 @@ public class ViveNavMeshEditor : Editor {
         // Raycast Settings //
         EditorGUILayout.LabelField("Raycast Settings", EditorStyles.boldLabel);
 
-        EditorGUILayout.LayerField("Layer", LayerMask.NameToLayer("Default"));
-        EditorGUILayout.EnumMaskField("Trigger", QueryTriggerInteraction.Ignore);
+        int temp_layer_mask = p_layer_mask.intValue;
+
+        EditorGUI.BeginChangeCheck();
+        temp_layer_mask = EditorGUILayout.LayerField("Layer", temp_layer_mask);
+        if(EditorGUI.EndChangeCheck())
+        {
+            Debug.Log(temp_layer_mask);
+            p_layer_mask.intValue = temp_layer_mask;
+        }
+        serializedObject.ApplyModifiedProperties();
     }
 
     /// \brief Modifies the given NavMesh so that only the Navigation areas are present in the mesh.  This is done only 
