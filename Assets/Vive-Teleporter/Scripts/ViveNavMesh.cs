@@ -93,8 +93,6 @@ public class ViveNavMesh : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.SceneView.RepaintAll();
 #endif
-        _LayerMask = UnityEngine.LayerMask.NameToLayer("Interaction");
-        _QueryTriggerInteraction = QueryTriggerInteraction.Ignore;
     }
 
     void Update ()
@@ -186,7 +184,7 @@ public class ViveNavMesh : MonoBehaviour
         Vector3 dir = p2 - p1;
         float dist = dir.magnitude;
         dir /= dist;
-        if(Physics.Raycast(p1, dir, out hit, dist, _LayerMask, _QueryTriggerInteraction))
+        if(Physics.Raycast(p1, dir, out hit, dist, _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
         {
             if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f)
             {
