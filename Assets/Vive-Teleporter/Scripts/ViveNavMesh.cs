@@ -42,6 +42,13 @@ public class ViveNavMesh : MonoBehaviour
     }
     [SerializeField]
     private int _LayerMask = 0;
+    public bool IgnoreLayerMask
+    {
+        get { return _IgnoreLayerMask; }
+        set { _IgnoreLayerMask = value; }
+    }
+    [SerializeField]
+    private bool _IgnoreLayerMask;
 
     public int QueryTriggerInteraction
     {
@@ -184,7 +191,7 @@ public class ViveNavMesh : MonoBehaviour
         Vector3 dir = p2 - p1;
         float dist = dir.magnitude;
         dir /= dist;
-        if(Physics.Raycast(p1, dir, out hit, dist, _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
+        if(Physics.Raycast(p1, dir, out hit, dist, _IgnoreLayerMask ? ~_LayerMask : _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
         {
             if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f)
             {
