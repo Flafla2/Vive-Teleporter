@@ -14,6 +14,7 @@ public class ViveNavMeshEditor : Editor {
     private SerializedProperty p_material;
     private SerializedProperty p_alpha;
     private SerializedProperty p_layer_mask;
+    private SerializedProperty p_query_trigger_interaction;
 
     void OnEnable()
     {
@@ -22,6 +23,7 @@ public class ViveNavMeshEditor : Editor {
         p_material = serializedObject.FindProperty("_GroundMaterial");
         p_alpha = serializedObject.FindProperty("GroundAlpha");
         p_layer_mask = serializedObject.FindProperty("_LayerMask");
+        p_query_trigger_interaction = serializedObject.FindProperty("_QueryTriggerInteraction");
     }
 
     public override void OnInspectorGUI()
@@ -145,11 +147,20 @@ public class ViveNavMeshEditor : Editor {
         int temp_layer_mask = p_layer_mask.intValue;
 
         EditorGUI.BeginChangeCheck();
-        temp_layer_mask = EditorGUILayout.LayerField("Layer", temp_layer_mask);
+        temp_layer_mask = EditorGUILayout.LayerField("Layer Mask", temp_layer_mask);
         if(EditorGUI.EndChangeCheck())
         {
-            Debug.Log(temp_layer_mask);
             p_layer_mask.intValue = temp_layer_mask;
+        }
+        serializedObject.ApplyModifiedProperties();
+
+        QueryTriggerInteraction temp_query_trigger_interaction = (QueryTriggerInteraction) p_query_trigger_interaction.intValue;
+
+        EditorGUI.BeginChangeCheck();
+        temp_query_trigger_interaction = (QueryTriggerInteraction) EditorGUILayout.EnumPopup("Query Trigger Interaction", (QueryTriggerInteraction) temp_query_trigger_interaction);
+        if(EditorGUI.EndChangeCheck())
+        {
+            p_query_trigger_interaction.intValue = (int) temp_query_trigger_interaction;
         }
         serializedObject.ApplyModifiedProperties();
     }
