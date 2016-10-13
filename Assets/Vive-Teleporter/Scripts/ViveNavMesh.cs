@@ -41,15 +41,15 @@ public class ViveNavMesh : MonoBehaviour
         set {  _LayerMask = value; }
     }
     [SerializeField]
-    private int _LayerMask;
+    private int _LayerMask = 0;
 
-    public QueryTriggerInteraction QueryTriggerInteraction
+    public int QueryTriggerInteraction
     {
         get { return _QueryTriggerInteraction; }
         set { _QueryTriggerInteraction = value; }
     }
     [SerializeField]
-    private QueryTriggerInteraction _QueryTriggerInteraction;
+    private int _QueryTriggerInteraction = 0;
 
     /// A Mesh that represents the "Selectable" area of the world.  This is converted from Unity's NavMesh in ViveNavMeshEditor
     public Mesh SelectableMesh
