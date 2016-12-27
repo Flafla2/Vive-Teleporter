@@ -40,9 +40,14 @@ public class TeleportVive : MonoBehaviour {
     public SteamVR_TrackedObject[] Controllers;
     private SteamVR_TrackedObject ActiveController;
 
+    /// Indicates the current use of teleportation.
+    /// None: The player is not using teleportation right now
+    /// Selecting: The player is currently selecting a teleport destination (holding down on touchpad)
+    /// Teleporting: The player has selected a teleport destination and is currently teleporting now (fading in/out)
+    public TeleportState CurrentTeleportState { get; private set; }
+
     private float LastClickAngle = 0;
 
-    private bool Teleporting = false;
     private bool FadingIn = false;
     private float TeleportTimeMarker = -1;
 
@@ -52,6 +57,9 @@ public class TeleportVive : MonoBehaviour {
     {
         // Disable the pointer graphic (until the user holds down on the touchpad)
         Pointer.enabled = false;
+
+        // Ensure we mark the player as not teleporting
+        CurrentTeleportState = TeleportState.None;
 
         // Standard plane mesh used for "fade out" graphic when you teleport
         // This way you don't need to supply a simple plane mesh in the inspector
@@ -128,7 +136,7 @@ public class TeleportVive : MonoBehaviour {
 
     void OnPostRender()
     {
-        if(Teleporting)
+        if(CurrentTeleportState == TeleportState.Teleporting)
         {
             // Perform the fading in/fading out animation, if we are teleporting.  This is essentially a triangle wave
             // in/out, and the user teleports when it is fully black.
@@ -146,7 +154,7 @@ public class TeleportVive : MonoBehaviour {
 	void Update ()
     {
         // If we are currently teleporting (ie handling the fade in/out transition)...
-        if(Teleporting)
+        if(CurrentTeleportState == TeleportState.Teleporting)
         {
             // Wait until half of the teleport time has passed before the next event (note: both the switch from fade
             // out to fade in and the switch from fade in to stop the animation is half of the fade duration)
@@ -155,7 +163,7 @@ public class TeleportVive : MonoBehaviour {
                 if(FadingIn)
                 {
                     // We have finished fading in
-                    Teleporting = false;
+                    CurrentTeleportState = TeleportState.None;
                 } else
                 {
                     // We have finished fading out - time to teleport!
@@ -167,13 +175,12 @@ public class TeleportVive : MonoBehaviour {
                 TeleportTimeMarker = Time.time;
                 FadingIn = !FadingIn;
             }
-
-            return;
         }
-
         // At this point, we are NOT actively teleporting.  So now we care about controller input.
-        if (ActiveController != null)
+        else if(CurrentTeleportState == TeleportState.Selecting)
         {
+            Debug.Assert(ActiveController != null);
+
             // Here, there is an active controller - that is, the user is holding down on the trackpad.
             // Poll controller for pertinent button data
             int index = (int)ActiveController.index;
@@ -185,12 +192,14 @@ public class TeleportVive : MonoBehaviour {
                 // If the user has decided to teleport (ie lets go of touchpad) then remove all visual indicators
                 // related to selecting things and actually teleport
                 // If the user has decided to cancel (ie squeezes grip button) then remove visual indicators and do nothing
-                if(shouldTeleport && Pointer.PointOnNavMesh)
+                if (shouldTeleport && Pointer.PointOnNavMesh)
                 {
                     // Begin teleport sequence
-                    Teleporting = true;
+                    CurrentTeleportState = TeleportState.Teleporting;
                     TeleportTimeMarker = Time.time;
                 }
+                else
+                    CurrentTeleportState = TeleportState.None;
                 
                 // Reset active controller, disable pointer, disable visual indicators
                 ActiveController = null;
@@ -223,7 +232,8 @@ public class TeleportVive : MonoBehaviour {
                     device.TriggerHapticPulse();
                 }
             }
-        } else
+        }
+        else //CurrentTeleportState == TeleportState.None
         {
             // At this point the user is not holding down on the touchpad at all or has canceled a teleport and hasn't
             // let go of the touchpad.  So we wait for the user to press the touchpad and enable visual indicators
@@ -246,6 +256,8 @@ public class TeleportVive : MonoBehaviour {
                     Pointer.transform.localRotation = Quaternion.identity;
                     Pointer.transform.localScale = Vector3.one;
                     Pointer.enabled = true;
+
+                    CurrentTeleportState = TeleportState.Selecting;
                     
                     if(NavmeshAnimator != null)
                         NavmeshAnimator.SetBool(EnabledAnimatorID, true);
@@ -256,4 +268,15 @@ public class TeleportVive : MonoBehaviour {
             }
         }
 	}
+}
+
+/// \brief Represents the player's current use of the teleport machanic.
+public enum TeleportState
+{
+    /// The player is not using teleportation right now
+    None,
+    /// The player is currently selecting a teleport destination (holding down on touchpad)
+    Selecting,
+    /// The player has selected a teleport destination and is currently teleporting now (fading in/out)
+    Teleporting
 }
