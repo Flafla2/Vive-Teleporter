@@ -36,6 +36,29 @@ public class ViveNavMesh : MonoBehaviour
     private float LastGroundAlpha = 1.0f;
     private int AlphaShaderID = -1;
 
+    public int LayerMask
+    {
+        get { return _LayerMask;  }
+        set {  _LayerMask = value; }
+    }
+    [SerializeField]
+    private int _LayerMask = 0;
+    public bool IgnoreLayerMask
+    {
+        get { return _IgnoreLayerMask; }
+        set { _IgnoreLayerMask = value; }
+    }
+    [SerializeField]
+    private bool _IgnoreLayerMask = true;
+
+    public int QueryTriggerInteraction
+    {
+        get { return _QueryTriggerInteraction; }
+        set { _QueryTriggerInteraction = value; }
+    }
+    [SerializeField]
+    private int _QueryTriggerInteraction = 0;
+
     /// A Mesh that represents the "Selectable" area of the world.  This is converted from Unity's NavMesh in ViveNavMeshEditor
     public Mesh SelectableMesh
     {
@@ -169,7 +192,7 @@ public class ViveNavMesh : MonoBehaviour
         Vector3 dir = p2 - p1;
         float dist = dir.magnitude;
         dir /= dist;
-        if(Physics.Raycast(p1, dir, out hit, dist))
+        if(Physics.Raycast(p1, dir, out hit, dist, _IgnoreLayerMask ? ~_LayerMask : _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
         {
             if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f)
             {
