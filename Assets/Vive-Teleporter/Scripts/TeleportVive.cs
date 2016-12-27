@@ -212,6 +212,7 @@ public class TeleportVive : MonoBehaviour {
                 offset.y = 0;
 
                 // Render representation of where the chaperone bounds will be after teleporting
+                RoomBorder.enabled = Pointer.PointOnNavMesh;
                 RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, Quaternion.identity, Vector3.one);
 
                 // Haptic feedback click every [HaptickClickAngleStep] degrees
@@ -245,7 +246,7 @@ public class TeleportVive : MonoBehaviour {
                     Pointer.transform.localRotation = Quaternion.identity;
                     Pointer.transform.localScale = Vector3.one;
                     Pointer.enabled = true;
-                    RoomBorder.enabled = true;
+                    
                     if(NavmeshAnimator != null)
                         NavmeshAnimator.SetBool(EnabledAnimatorID, true);
 
