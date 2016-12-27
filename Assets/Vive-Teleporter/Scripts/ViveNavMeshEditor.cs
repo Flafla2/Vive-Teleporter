@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.AI;
 using System;
 using System.Collections.Generic;
 
