@@ -75,9 +75,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _GroundMaterial: {fileID: 2100000, guid: 61ccb656016c9b44b8a49c327ee084a4, type: 2}
   GroundAlpha: 1
+  _LayerMask: 0
+  _IgnoreLayerMask: 1
+  _QueryTriggerInteraction: 0
   _SelectableMesh: {fileID: 0}
   _SelectableMeshBorder: []
-  _NavAreaMask: -1
+  _NavAreaMask: -9
+  _SampleRadius: 0.25
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1

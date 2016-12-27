@@ -84,6 +84,9 @@ public class ViveNavMesh : MonoBehaviour
     [SerializeField] [HideInInspector]
     private int _NavAreaMask = ~0; // Initialize to all
 
+    [SerializeField]
+    private float _SampleRadius = 0.25f;
+
     private BorderRenderer Border;
 
     private Dictionary<Camera, CommandBuffer> cameras = new Dictionary<Camera, CommandBuffer>();
@@ -202,7 +205,7 @@ public class ViveNavMesh : MonoBehaviour
             }
             hitPoint = hit.point;
             NavMeshHit navHit;
-            pointOnNavmesh = NavMesh.SamplePosition(hitPoint, out navHit, 0.05f, _NavAreaMask);
+            pointOnNavmesh = NavMesh.SamplePosition(hitPoint, out navHit, _SampleRadius, _NavAreaMask);
 
             // This is necessary because NavMesh.SamplePosition does a sphere intersection, not a projection onto the mesh or
             // something like that.  This means that in some scenarios you can have a point that's not actually on/above

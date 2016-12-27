@@ -17,6 +17,7 @@ public class ViveNavMeshEditor : Editor {
     private SerializedProperty p_layer_mask;
     private SerializedProperty p_ignore_layer_mask;
     private SerializedProperty p_query_trigger_interaction;
+    private SerializedProperty p_sample_radius;
 
     void OnEnable()
     {
@@ -27,6 +28,7 @@ public class ViveNavMeshEditor : Editor {
         p_layer_mask = serializedObject.FindProperty("_LayerMask");
         p_ignore_layer_mask = serializedObject.FindProperty("_IgnoreLayerMask");
         p_query_trigger_interaction = serializedObject.FindProperty("_QueryTriggerInteraction");
+        p_sample_radius = serializedObject.FindProperty("_SampleRadius");
     }
 
     public override void OnInspectorGUI()
@@ -173,6 +175,14 @@ public class ViveNavMeshEditor : Editor {
         {
             p_query_trigger_interaction.intValue = (int) temp_query_trigger_interaction;
         }
+        serializedObject.ApplyModifiedProperties();
+
+        EditorGUILayout.LabelField("Navmesh Settings", EditorStyles.boldLabel);
+        GUILayout.Label(
+            "Make sure the sample radius below is larger than your Navmesh Voxel Size (see Advanced > Voxel Size " +
+            "in the navigation window).  Increase this if the selection disk is not appearing.",
+            wrap);
+        EditorGUILayout.PropertyField(p_sample_radius);
         serializedObject.ApplyModifiedProperties();
     }
 
