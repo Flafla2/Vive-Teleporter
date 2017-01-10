@@ -108,9 +108,9 @@ public class ViveNavMeshEditor : Editor {
             int[] tris = tri.indices;
             int[] areas = tri.areas;
 
-            int vert_size;
+            int vert_size = verts.Length;
             int tri_size = tris.Length;
-            RemoveMeshDuplicates(verts, tris, out vert_size, mesh.SampleRadius);
+            RemoveMeshDuplicates(verts, tris, out vert_size, 0.01f);
             DewarpMesh(verts, mesh.DewarpingMethod, mesh.SampleRadius);
             CullNavmeshTriangulation(verts, tris, areas, p_area.intValue, mesh.IgnoreSlopedSurfaces, ref vert_size, ref tri_size);
 
@@ -355,8 +355,11 @@ public class ViveNavMeshEditor : Editor {
     /// If this becomes an actual performance hog, consider changing this to sort the vertices first using a more
     /// optimized process O(n lg n) then removing adjacent duplicates.
     /// 
-    /// \param m Mesh to remove duplicates from
-    private static void RemoveMeshDuplicates(Vector3[] verts, int[] elts, out int verts_size, double step)
+    /// \param verts Vertex array to process
+    /// \param elts Triangle indices array
+    /// \param verts_size size of vertex array after processing
+    /// \param threshold Threshold with which to combine vertices
+    private static void RemoveMeshDuplicates(Vector3[] verts, int[] elts, out int verts_size, double threshold)
     {
         int size = verts.Length;
         for (int x = 0; x < size; x++)
@@ -365,7 +368,7 @@ public class ViveNavMeshEditor : Editor {
             {
                 Vector3 d = verts[x] - verts[y];
 
-                if (x != y && Mathf.Abs(d.x) < step && Mathf.Abs(d.y) < step && Mathf.Abs(d.z) < step)
+                if (x != y && Mathf.Abs(d.x) < threshold && Mathf.Abs(d.y) < threshold && Mathf.Abs(d.z) < threshold)
                 {
                     verts[y] = verts[size - 1];
                     for (int z = 0; z < elts.Length; z++)
