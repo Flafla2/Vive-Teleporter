@@ -18,6 +18,8 @@ public class ViveNavMeshEditor : Editor {
     private SerializedProperty p_ignore_layer_mask;
     private SerializedProperty p_query_trigger_interaction;
     private SerializedProperty p_sample_radius;
+    private SerializedProperty p_ignore_sloped_surfaces;
+    private SerializedProperty p_dewarp_method;
 
     void OnEnable()
     {
@@ -29,6 +31,8 @@ public class ViveNavMeshEditor : Editor {
         p_ignore_layer_mask = serializedObject.FindProperty("_IgnoreLayerMask");
         p_query_trigger_interaction = serializedObject.FindProperty("_QueryTriggerInteraction");
         p_sample_radius = serializedObject.FindProperty("_SampleRadius");
+        p_ignore_sloped_surfaces = serializedObject.FindProperty("_IgnoreSlopedSurfaces");
+        p_dewarp_method = serializedObject.FindProperty("_DewarpingMethod");
     }
 
     public override void OnInspectorGUI()
@@ -52,20 +56,20 @@ public class ViveNavMeshEditor : Editor {
         serializedObject.Update();
 
         // Area Mask //
-        string[] areas = GameObjectUtility.GetNavMeshAreaNames();
-        int[] area_index = new int[areas.Length];
+        string[] areaNames = GameObjectUtility.GetNavMeshAreaNames();
+        int[] area_index = new int[areaNames.Length];
         int temp_mask = 0;
-        for (int x = 0; x < areas.Length; x++)
+        for (int x = 0; x < areaNames.Length; x++)
         {
-            area_index[x] = GameObjectUtility.GetNavMeshAreaFromName(areas[x]);
+            area_index[x] = GameObjectUtility.GetNavMeshAreaFromName(areaNames[x]);
             temp_mask |= ((p_area.intValue >> area_index[x]) & 1) << x;
         }
         EditorGUI.BeginChangeCheck();
-        temp_mask = EditorGUILayout.MaskField("Area Mask", temp_mask, areas);
+        temp_mask = EditorGUILayout.MaskField("Area Mask", temp_mask, areaNames);
         if(EditorGUI.EndChangeCheck())
         {
             p_area.intValue = 0;
-            for(int x=0; x<areas.Length; x++)
+            for(int x=0; x<areaNames.Length; x++)
                 p_area.intValue |= (((temp_mask >> x) & 1) == 1 ? 0 : 1) << area_index[x];
             p_area.intValue = ~p_area.intValue;
         }
@@ -99,10 +103,18 @@ public class ViveNavMeshEditor : Editor {
             Undo.RecordObject(mesh, "Update Navmesh Data");
 
             NavMeshTriangulation tri = NavMesh.CalculateTriangulation();
-            int vert_size, tri_size;
-            CullNavmeshTriangulation(ref tri, p_area.intValue, out vert_size, out tri_size);
 
-            Mesh m = ConvertNavmeshToMesh(tri, vert_size, tri_size);
+            Vector3[] verts = tri.vertices;
+            int[] tris = tri.indices;
+            int[] areas = tri.areas;
+
+            int vert_size;
+            int tri_size = tris.Length;
+            RemoveMeshDuplicates(verts, tris, out vert_size, mesh.SampleRadius);
+            DewarpMesh(verts, mesh.DewarpingMethod, mesh.SampleRadius);
+            CullNavmeshTriangulation(verts, tris, areas, p_area.intValue, mesh.IgnoreSlopedSurfaces, ref vert_size, ref tri_size);
+
+            Mesh m = ConvertNavmeshToMesh(verts, tris, vert_size, tri_size);
             // Can't use SerializedProperties here because BorderPointSet doesn't derive from UnityEngine.Object
             mesh.SelectableMeshBorder = FindBorderEdges(m);
 
@@ -177,51 +189,86 @@ public class ViveNavMeshEditor : Editor {
         }
         serializedObject.ApplyModifiedProperties();
 
+        // Navmesh Settings //
         EditorGUILayout.LabelField("Navmesh Settings", EditorStyles.boldLabel);
         GUILayout.Label(
-            "Make sure the sample radius below is larger than your Navmesh Voxel Size (see Advanced > Voxel Size " +
+            "Make sure the sample radius below is equal to your Navmesh Voxel Size (see Advanced > Voxel Size " +
             "in the navigation window).  Increase this if the selection disk is not appearing.",
             wrap);
         EditorGUILayout.PropertyField(p_sample_radius);
+        EditorGUILayout.PropertyField(p_ignore_sloped_surfaces);
+        EditorGUILayout.PropertyField(p_dewarp_method);
+
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private static void DewarpMesh(Vector3[] verts, NavmeshDewarpingMethod dw, float step)
+    {
+        if (dw == NavmeshDewarpingMethod.None)
+            return;
+
+        for (int x = 0; x < verts.Length; x++)
+        {
+            if (dw == NavmeshDewarpingMethod.RaycastDownward)
+            {
+                RaycastHit hit;
+
+                // Have the raycast span over the entire navmesh voxel
+                Vector3 sample = verts[x];
+                double vy = Math.Round(verts[x].y / step) * step;
+                sample.y = (float)vy;
+
+                if (Physics.Raycast(sample, Vector3.down, out hit, (float)step + 0.01f))
+                    verts[x] = hit.point;
+
+            }
+            else if (dw == NavmeshDewarpingMethod.RoundToVoxelSize)
+            {
+                // Clamp the point to the voxel grid in the Y direction
+                double vy = Math.Round((verts[x].y - 0.05) / step) * step + 0.05;
+                verts[x].y = (float)vy;
+            }
+        }
     }
 
     /// \brief Modifies the given NavMesh so that only the Navigation areas are present in the mesh.  This is done only 
     ///        by swapping, so that no new memory is allocated.
     /// 
     /// The data stored outside of the returned array sizes should be considered invalid and will contain garbage data.
-    /// \param navMesh NavMesh data to modify
-    /// \param area Area mask to include in returned mesh.  Areas outside of this mask are culled.
+    /// \param vertices vertices of Navmesh
+    /// \param indices indices of Navmesh triangles
+    /// \param areas Navmesh areas
+    /// \param areaMask Area mask to include in returned mesh.  Areas outside of this mask are culled.
     /// \param vert_size New size of navMesh.vertices
     /// \param tri_size New size of navMesh.areas and one third of the size of navMesh.indices
-    private static void CullNavmeshTriangulation(ref NavMeshTriangulation navMesh, int area, out int vert_size, out int tri_size)
+    private static void CullNavmeshTriangulation(Vector3[] vertices, int[] indices, int[] areas, int areaMask, bool ignore_sloped_surfaces, ref int vert_size, ref int tri_size)
     {
         // Step 1: re-order triangles so that valid areas are in front.  Then determine tri_size.
-        tri_size = navMesh.indices.Length / 3;
+        tri_size = indices.Length / 3;
         for(int i=0; i < tri_size; i++)
         {
-            Vector3 p1 = navMesh.vertices[navMesh.indices[i * 3]];
-            Vector3 p2 = navMesh.vertices[navMesh.indices[i * 3 + 1]];
-            Vector3 p3 = navMesh.vertices[navMesh.indices[i * 3 + 2]];
+            Vector3 p1 = vertices[indices[i * 3]];
+            Vector3 p2 = vertices[indices[i * 3 + 1]];
+            Vector3 p3 = vertices[indices[i * 3 + 2]];
             Plane p = new Plane(p1, p2, p3);
             bool vertical = Mathf.Abs(Vector3.Dot(p.normal, Vector3.up)) > 0.99f;
 
             // If the current triangle isn't flat (normal is up) or if it doesn't match
             // with the provided mask, we should cull it.
-            if(((1 << navMesh.areas[i]) & area) == 0 || !vertical) // If true this triangle should be culled.
+            if(((1 << areas[i]) & areaMask) == 0 || (ignore_sloped_surfaces && !vertical)) // If true this triangle should be culled.
             {
                 // Swap area indices and triangle indices with the end of the array
                 int t_ind = tri_size - 1;
 
-                int t_area = navMesh.areas[t_ind];
-                navMesh.areas[t_ind] = navMesh.areas[i];
-                navMesh.areas[i] = t_area;
+                int t_area = areas[t_ind];
+                areas[t_ind] = areas[i];
+                areas[i] = t_area;
 
                 for(int j=0;j<3;j++)
                 {
-                    int t_v = navMesh.indices[t_ind * 3 + j];
-                    navMesh.indices[t_ind * 3 + j] = navMesh.indices[i * 3 + j];
-                    navMesh.indices[i * 3 + j] = t_v;
+                    int t_v = indices[t_ind * 3 + j];
+                    indices[t_ind * 3 + j] = indices[i * 3 + j];
+                    indices[i * 3 + j] = t_v;
                 }
 
                 // Then reduce the size of the array, effectively cutting off the previous triangle
@@ -235,23 +282,23 @@ public class ViveNavMeshEditor : Editor {
         vert_size = 0;
         for(int i=0; i < tri_size * 3; i++)
         {
-            int prv = navMesh.indices[i];
+            int prv = indices[i];
             if (prv >= vert_size)
             {
                 int nxt = vert_size;
 
                 // Bring the current vertex to the end of the "active" array by swapping it with what's currently there
-                Vector3 t_v = navMesh.vertices[prv];
-                navMesh.vertices[prv] = navMesh.vertices[nxt];
-                navMesh.vertices[nxt] = t_v;
+                Vector3 t_v = vertices[prv];
+                vertices[prv] = vertices[nxt];
+                vertices[nxt] = t_v;
 
                 // Now change around the values in the triangle indices to reflect the swap
                 for(int j=i; j < tri_size * 3; j++)
                 {
-                    if (navMesh.indices[j] == prv)
-                        navMesh.indices[j] = nxt;
-                    else if (navMesh.indices[j] == nxt)
-                        navMesh.indices[j] = prv;
+                    if (indices[j] == prv)
+                        indices[j] = nxt;
+                    else if (indices[j] == nxt)
+                        indices[j] = prv;
                 }
 
                 // Increase the size of the vertex array to reflect the changes.
@@ -266,7 +313,7 @@ public class ViveNavMeshEditor : Editor {
     /// \param navMesh Precalculated Nav Mesh Triangulation
     /// \param vert_size size of vertex array
     /// \param tri_size size of triangle array
-    private static Mesh ConvertNavmeshToMesh(NavMeshTriangulation navMesh, int vert_size, int tri_size)
+    private static Mesh ConvertNavmeshToMesh(Vector3[] vraw, int[] iraw, int vert_size, int tri_size)
     {
         Mesh ret = new Mesh();
 
@@ -278,19 +325,21 @@ public class ViveNavMeshEditor : Editor {
         }
 
         Vector3[] vertices = new Vector3[vert_size];
-        for (int x = 0; x < vertices.Length; x++)
-            // Note: Unity navmesh is offset 0.05m from the ground.  This pushes it down to 0
-            vertices[x] = navMesh.vertices[x];
+        for (int x = 0; x < vertices.Length; x++) {
+            vertices[x].x = vraw[x].x;
+            vertices[x].y = vraw[x].y;
+            vertices[x].z = vraw[x].z;
+        }
 
         int[] triangles = new int[tri_size * 3];
         for (int x = 0; x < triangles.Length; x++)
-            triangles[x] = navMesh.indices[x];
+            triangles[x] = iraw[x];
 
         ret.name = "Navmesh";
+
+        ret.Clear();
         ret.vertices = vertices;
         ret.triangles = triangles;
-
-        RemoveMeshDuplicates(ret);
 
         ret.RecalculateNormals();
         ret.RecalculateBounds();
@@ -307,26 +356,16 @@ public class ViveNavMeshEditor : Editor {
     /// optimized process O(n lg n) then removing adjacent duplicates.
     /// 
     /// \param m Mesh to remove duplicates from
-    private static void RemoveMeshDuplicates(Mesh m)
+    private static void RemoveMeshDuplicates(Vector3[] verts, int[] elts, out int verts_size, double step)
     {
-        Vector3[] verts = new Vector3[m.vertices.Length];
-        for (int x = 0; x < verts.Length; x++)
-            verts[x] = m.vertices[x];
-
-        int[] elts = new int[m.triangles.Length];
-        for (int x = 0; x < elts.Length; x++)
-            elts[x] = m.triangles[x];
-
         int size = verts.Length;
         for (int x = 0; x < size; x++)
         {
             for (int y = x + 1; y < size; y++)
             {
                 Vector3 d = verts[x] - verts[y];
-                d.x = Mathf.Abs(d.x);
-                d.y = Mathf.Abs(d.y);
-                d.z = Mathf.Abs(d.z);
-                if (x != y && d.x < 0.05f && d.y < 0.05f && d.z < 0.05f)
+
+                if (x != y && Mathf.Abs(d.x) < step && Mathf.Abs(d.y) < step && Mathf.Abs(d.z) < step)
                 {
                     verts[y] = verts[size - 1];
                     for (int z = 0; z < elts.Length; z++)
@@ -342,11 +381,8 @@ public class ViveNavMeshEditor : Editor {
                 }
             }
         }
-        
-        Array.Resize<Vector3>(ref verts, size);
-        m.Clear();
-        m.vertices = verts;
-        m.triangles = elts;
+
+        verts_size = size;
     }
 
     /// \brief Given some mesh m, calculates a number of polylines that border the mesh.  This may return more than

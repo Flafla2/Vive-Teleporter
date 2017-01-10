@@ -84,8 +84,20 @@ public class ViveNavMesh : MonoBehaviour
     [SerializeField] [HideInInspector]
     private int _NavAreaMask = ~0; // Initialize to all
 
+    public bool IgnoreSlopedSurfaces { get { return _IgnoreSlopedSurfaces; } }
+    [SerializeField]
+    private bool _IgnoreSlopedSurfaces = true;
+
+    public float SampleRadius
+    {
+        get { return _SampleRadius; }
+    }
     [SerializeField]
     private float _SampleRadius = 0.25f;
+
+    public NavmeshDewarpingMethod DewarpingMethod { get { return _DewarpingMethod; } }
+    [SerializeField]
+    private NavmeshDewarpingMethod _DewarpingMethod = NavmeshDewarpingMethod.None;
 
     private BorderRenderer Border;
 
@@ -197,24 +209,16 @@ public class ViveNavMesh : MonoBehaviour
         dir /= dist;
         if(Physics.Raycast(p1, dir, out hit, dist, _IgnoreLayerMask ? ~_LayerMask : _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
         {
-            if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f)
+            if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f && _IgnoreSlopedSurfaces)
             {
                 pointOnNavmesh = false;
                 hitPoint = hit.point;
                 return true;
             }
+
             hitPoint = hit.point;
             NavMeshHit navHit;
             pointOnNavmesh = NavMesh.SamplePosition(hitPoint, out navHit, _SampleRadius, _NavAreaMask);
-
-            // This is necessary because NavMesh.SamplePosition does a sphere intersection, not a projection onto the mesh or
-            // something like that.  This means that in some scenarios you can have a point that's not actually on/above
-            // the NavMesh but is right next to it.  However, if the point is above a Navmesh position that has a normal
-            // of (0,1,0) we can assume that the closest position on the Navmesh to any point has the same x/z coordinates
-            // UNLESS that point isn't on top of the Navmesh.
-            if( !Mathf.Approximately(navHit.position.x, hitPoint.x) || 
-                !Mathf.Approximately(navHit.position.z, hitPoint.z))
-                pointOnNavmesh = false;
 
             return true;
         }
@@ -233,4 +237,10 @@ public class BorderPointSet
     {
         this.Points = Points;
     }
+}
+
+[System.Serializable]
+public enum NavmeshDewarpingMethod
+{
+    None, RoundToVoxelSize, RaycastDownward
 }
