@@ -46,7 +46,8 @@ public class TeleportVive : MonoBehaviour {
     /// Teleporting: The player has selected a teleport destination and is currently teleporting now (fading in/out)
     public TeleportState CurrentTeleportState { get; private set; }
 
-    private float LastClickAngle = 0;
+    private Vector3 LastClickAngle = Vector3.zero;
+    private bool IsClicking = false;
 
     private bool FadingIn = false;
     private float TeleportTimeMarker = -1;
@@ -225,12 +226,26 @@ public class TeleportVive : MonoBehaviour {
                 RoomBorder.Transpose = Matrix4x4.TRS(Pointer.SelectedPoint - offset, Quaternion.identity, Vector3.one);
 
                 // Haptic feedback click every [HaptickClickAngleStep] degrees
-                float angleClickDiff = Pointer.CurrentParabolaAngle - LastClickAngle;
-                if(Mathf.Abs(angleClickDiff) > HapticClickAngleStep)
+                if (Pointer.CurrentParabolaAngleY >= 45) // Don't click when at max degrees
+                    LastClickAngle = Pointer.CurrentPointVector;
+
+                float angleClickDiff = Vector3.Angle(LastClickAngle, Pointer.CurrentPointVector);
+                if (IsClicking && Mathf.Abs(angleClickDiff) > HapticClickAngleStep)
                 {
-                    LastClickAngle = Pointer.CurrentParabolaAngle;
-                    device.TriggerHapticPulse();
+                    LastClickAngle = Pointer.CurrentPointVector;
+                    if (Pointer.PointOnNavMesh)
+                        device.TriggerHapticPulse();
                 }
+
+                // Trigger a stronger haptic pulse when "entering" a teleportable surface
+                if (Pointer.PointOnNavMesh && !IsClicking)
+                {
+                    IsClicking = true;
+                    device.TriggerHapticPulse(750);
+                    LastClickAngle = Pointer.CurrentPointVector;
+                }
+                else if (!Pointer.PointOnNavMesh && IsClicking)
+                    IsClicking = false;
             }
         }
         else //CurrentTeleportState == TeleportState.None
@@ -263,7 +278,8 @@ public class TeleportVive : MonoBehaviour {
                         NavmeshAnimator.SetBool(EnabledAnimatorID, true);
 
                     Pointer.ForceUpdateCurrentAngle();
-                    LastClickAngle = Pointer.CurrentParabolaAngle;
+                    LastClickAngle = Pointer.CurrentPointVector;
+                    IsClicking = Pointer.PointOnNavMesh;
                 }
             }
         }

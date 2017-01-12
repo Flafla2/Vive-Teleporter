@@ -30,7 +30,8 @@ public class ParabolicPointer : MonoBehaviour {
     
     public Vector3 SelectedPoint { get; private set; }
     public bool PointOnNavMesh { get; private set; }
-    public float CurrentParabolaAngle { get; private set; }
+    public float CurrentParabolaAngleY { get; private set; }
+    public Vector3 CurrentPointVector { get; private set; }
 
     private GameObject SelectionPadObject;
     private GameObject InvalidPadObject;
@@ -206,7 +207,8 @@ public class ParabolicPointer : MonoBehaviour {
         // 1. Calculate Parabola Points
         Vector3 velocity = transform.TransformDirection(InitialVelocity);
         Vector3 velocity_normalized;
-        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
+        CurrentParabolaAngleY = ClampInitialVelocity(ref velocity, out velocity_normalized);
+        CurrentPointVector = velocity_normalized;
 
         Vector3 normal;
         PointOnNavMesh = CalculateParabolicCurve(
@@ -252,7 +254,8 @@ public class ParabolicPointer : MonoBehaviour {
     {
         Vector3 velocity = transform.TransformDirection(InitialVelocity);
         Vector3 d;
-        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out d);
+        CurrentParabolaAngleY = ClampInitialVelocity(ref velocity, out d);
+        CurrentPointVector = d;
     }
 
     // Clamps the given velocity vector so that it can't be more than 45 degrees above the horizontal.
@@ -299,7 +302,7 @@ public class ParabolicPointer : MonoBehaviour {
 
         Vector3 velocity = transform.TransformDirection(InitialVelocity);
         Vector3 velocity_normalized;
-        CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
+        CurrentParabolaAngleY = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
         Vector3 normal;
         bool didHit = CalculateParabolicCurve(
