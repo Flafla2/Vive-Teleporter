@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Selectable Border
+  m_Name: Fade Inside
   m_Shader: {fileID: 4800000, guid: 18f009343c2ca574a83a6413c38bae08, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
@@ -115,10 +115,10 @@ Material:
     m_Colors:
     - first:
         name: _BackColor
-      second: {r: 0.7681661, g: 0.90513265, b: 0.9411765, a: 0.172}
+      second: {r: 0.9098039, g: 0.6117647, b: 0.16470584, a: 0.216}
     - first:
         name: _Color
-      second: {r: 0.5363322, g: 0.8340889, b: 0.9117647, a: 0.791}
+      second: {r: 0.9117647, g: 0.6141003, b: 0.16760376, a: 0.934}
     - first:
         name: _EmissionColor
       second: {r: 0, g: 0, b: 0, a: 1}
