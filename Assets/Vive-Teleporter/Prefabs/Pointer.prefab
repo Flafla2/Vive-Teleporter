@@ -43,7 +43,7 @@ MonoBehaviour:
   NavMesh: {fileID: 0}
   InitialVelocity: {x: 0, y: 0, z: 6.78}
   Acceleration: {x: -0, y: -9.8, z: -0}
-  PointCount: 15
+  PointCount: 25
   PointSpacing: 0.5
   GraphicThickness: 0.05
   GraphicMaterial: {fileID: 2100000, guid: 21a645b07758b4b478bff4374fdb9a43, type: 2}
