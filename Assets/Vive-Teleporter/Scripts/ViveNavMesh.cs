@@ -199,9 +199,10 @@ public class ViveNavMesh : MonoBehaviour
     /// \param p2 Last (end) point of ray
     /// \param pointOnNavmesh If the raycast hit something on the navmesh.
     /// \param hitPoint If hit, the point of the hit.  Otherwise zero.
+    /// \param normal If hit, the normal of the hit surface.  Otherwise (0, 1, 0)
     /// 
     /// \return If the raycast hit something.
-    public bool Linecast(Vector3 p1, Vector3 p2, out bool pointOnNavmesh, out Vector3 hitPoint)
+    public bool Linecast(Vector3 p1, Vector3 p2, out bool pointOnNavmesh, out Vector3 hitPoint, out Vector3 normal)
     {
         RaycastHit hit;
         Vector3 dir = p2 - p1;
@@ -209,10 +210,12 @@ public class ViveNavMesh : MonoBehaviour
         dir /= dist;
         if(Physics.Raycast(p1, dir, out hit, dist, _IgnoreLayerMask ? ~_LayerMask : _LayerMask, (QueryTriggerInteraction) _QueryTriggerInteraction))
         {
-            if(Vector3.Dot(Vector3.up, hit.normal) < 0.99f && _IgnoreSlopedSurfaces)
+            normal = hit.normal;
+            if (Vector3.Dot(Vector3.up, hit.normal) < 0.99f && _IgnoreSlopedSurfaces)
             {
                 pointOnNavmesh = false;
                 hitPoint = hit.point;
+                
                 return true;
             }
 
@@ -224,6 +227,7 @@ public class ViveNavMesh : MonoBehaviour
         }
         pointOnNavmesh = false;
         hitPoint = Vector3.zero;
+        normal = Vector3.up;
         return false;
     }
 }

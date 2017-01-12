@@ -20,18 +20,20 @@ public class ParabolicPointer : MonoBehaviour {
     [Tooltip("Material to use to render the parabola mesh")]
     public Material GraphicMaterial;
     [Header("Selection Pad Properties")]
-    [Tooltip("Mesh to use for the selection pad (where the user is selecting stuff)")]
-    public Mesh SelectionPadMesh;
-    [Tooltip("Material to use for the fading-out area of the selection pad (the outer wall)")]
-    public Material SelectionPadFadeMaterial;
-    [Tooltip("Material to use for the edge of the bottom of the selection pad")]
-    public Material SelectionPadCircleMaterial;
-    [Tooltip("Material to use for the inside of the bottom of the selection pad")]
-    public Material SelectionPadBottomMaterial;
+    [SerializeField]
+    [Tooltip("Prefab to use as the selection pad when the player is pointing at a valid teleportable surface.")]
+    private GameObject SelectionPadPrefab;
+    [SerializeField]
+    [Tooltip("Prefab to use as the selection pad when the player is pointing at an invalid teleportable surface.")]
+    private GameObject InvalidPadPrefab;
+
     
     public Vector3 SelectedPoint { get; private set; }
     public bool PointOnNavMesh { get; private set; }
     public float CurrentParabolaAngle { get; private set; }
+
+    private GameObject SelectionPadObject;
+    private GameObject InvalidPadObject;
 
 
     private Mesh ParabolaMesh;
@@ -74,7 +76,8 @@ public class ParabolicPointer : MonoBehaviour {
     // points: number of sample points
     // gnd: height of the ground, in meters above y=0
     // outPts: List that will be populated by new points
-    private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, ViveNavMesh nav, List<Vector3> outPts)
+    // normal: normal of hit point
+    private static bool CalculateParabolicCurve(Vector3 p0, Vector3 v0, Vector3 a, float dist, int points, ViveNavMesh nav, List<Vector3> outPts, out Vector3 normal)
     {
         outPts.Clear();
         outPts.Add(p0);
@@ -88,11 +91,13 @@ public class ParabolicPointer : MonoBehaviour {
             Vector3 next = ParabolicCurve(p0, v0, a, t);
 
             Vector3 castHit;
+            Vector3 norm;
             bool endOnNavmesh;
-            bool cast = nav.Linecast(last, next, out endOnNavmesh, out castHit);
+            bool cast = nav.Linecast(last, next, out endOnNavmesh, out castHit, out norm);
             if (cast)
             {
                 outPts.Add(castHit);
+                normal = norm;
                 return endOnNavmesh;
             }
             else
@@ -101,7 +106,7 @@ public class ParabolicPointer : MonoBehaviour {
             last = next;
         }
 
-
+        normal = Vector3.up;
         return false;
     }
 
@@ -172,6 +177,26 @@ public class ParabolicPointer : MonoBehaviour {
         ParabolaMesh.name = "Parabolic Pointer";
         ParabolaMesh.vertices = new Vector3[0];
         ParabolaMesh.triangles = new int[0];
+
+        if(SelectionPadPrefab != null)
+        {
+            SelectionPadObject = Instantiate<GameObject>(SelectionPadPrefab);
+            SelectionPadObject.SetActive(false);
+        }
+
+        if (InvalidPadPrefab != null)
+        {
+            InvalidPadObject = Instantiate<GameObject>(InvalidPadPrefab);
+            InvalidPadObject.SetActive(false);
+        }
+    }
+
+    void OnDisable()
+    {
+        if(SelectionPadObject != null)
+            SelectionPadObject.SetActive(false);
+        if(InvalidPadObject != null)
+            InvalidPadObject.SetActive(false);
     }
 
     private List<Vector3> ParabolaPoints;
@@ -183,39 +208,42 @@ public class ParabolicPointer : MonoBehaviour {
         Vector3 velocity_normalized;
         CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
+        Vector3 normal;
         PointOnNavMesh = CalculateParabolicCurve(
             transform.position,
             velocity,
             Acceleration, PointSpacing, PointCount,
             NavMesh,
-            ParabolaPoints);
+            ParabolaPoints,
+            out normal);
 
         SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
 
         // 2. Render Parabola graphics
-        // Make sure that there is actually a point on the navmesh, and that all requisite art is available
-        bool ShouldDrawMarker = PointOnNavMesh && SelectionPadMesh != null
-            && SelectionPadFadeMaterial != null && SelectionPadBottomMaterial != null && 
-            SelectionPadCircleMaterial != null;
-
-        if (ShouldDrawMarker)
+        if(SelectionPadObject != null)
         {
-            // Draw Inside of Selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, gameObject.layer, null, 3);
-            // Draw Bottom of selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadCircleMaterial, gameObject.layer, null, 1);
-            // Draw Bottom of selection pad
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadBottomMaterial, gameObject.layer, null, 2);
+            SelectionPadObject.SetActive(PointOnNavMesh);
+            SelectionPadObject.transform.position = SelectedPoint + Vector3.one * 0.005f;
+            if(PointOnNavMesh)
+            {
+                SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal);
+                SelectionPadObject.transform.Rotate(90, 0, 0);
+            }
+        }
+        if(InvalidPadObject != null)
+        {
+            InvalidPadObject.SetActive(!PointOnNavMesh);
+            InvalidPadObject.transform.position = SelectedPoint + Vector3.one * 0.005f;
+            if (!PointOnNavMesh)
+            {
+                InvalidPadObject.transform.rotation = Quaternion.LookRotation(normal);
+                InvalidPadObject.transform.Rotate(90, 0, 0);
+            }
         }
 
         // Draw parabola (BEFORE the outside faces of the selection pad, to avoid depth issues)
         GenerateMesh(ref ParabolaMesh, ParabolaPoints, velocity, Time.time % 1);
-
-        // Draw outside faces of selection pad AFTER parabola (it is drawn on top)
         Graphics.DrawMesh(ParabolaMesh, Matrix4x4.identity, GraphicMaterial, gameObject.layer);
-
-        if (ShouldDrawMarker)
-            Graphics.DrawMesh(SelectionPadMesh, Matrix4x4.TRS(SelectedPoint + Vector3.up * 0.005f, Quaternion.identity, Vector3.one * 0.2f), SelectionPadFadeMaterial, gameObject.layer, null, 0);
     }
     
     // Used when you can't depend on Update() to automatically update CurrentParabolaAngle
@@ -273,12 +301,13 @@ public class ParabolicPointer : MonoBehaviour {
         Vector3 velocity_normalized;
         CurrentParabolaAngle = ClampInitialVelocity(ref velocity, out velocity_normalized);
 
+        Vector3 normal;
         bool didHit = CalculateParabolicCurve(
             transform.position, 
             velocity, 
             Acceleration, PointSpacing, PointCount, 
             NavMesh,
-            ParabolaPoints_Gizmo);
+            ParabolaPoints_Gizmo, out normal);
 
         Gizmos.color = Color.blue;
         for (int x = 0; x < ParabolaPoints_Gizmo.Count - 1; x++)

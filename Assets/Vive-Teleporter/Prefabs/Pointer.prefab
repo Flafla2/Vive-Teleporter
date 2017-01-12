@@ -5,10 +5,10 @@ GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Component:
-  - 4: {fileID: 446646}
-  - 114: {fileID: 11446438}
+  - component: {fileID: 446646}
+  - component: {fileID: 11446438}
   m_Layer: 0
   m_Name: Pointer
   m_TagString: Untagged
@@ -22,13 +22,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 105914}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.14834765, y: 0.8105588, z: -0.22872324, w: 0.5183369}
+  m_LocalPosition: {x: -4.11, y: 1.296, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 31.6397, y: 114.868095, z: 0.22729999}
 --- !u!114 &11446438
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -45,15 +45,11 @@ MonoBehaviour:
   Acceleration: {x: -0, y: -9.8, z: -0}
   PointCount: 15
   PointSpacing: 0.5
-  GroundHeight: 0
   GraphicThickness: 0.05
   GraphicMaterial: {fileID: 2100000, guid: 21a645b07758b4b478bff4374fdb9a43, type: 2}
-  SelectionPadMesh: {fileID: 4300000, guid: 983b87eecead1450cafccbbd19bf6c72, type: 3}
-  SelectionPadFadeMaterial: {fileID: 2100000, guid: 23066602789434f6d92ddf4583872361,
+  SelectionPadPrefab: {fileID: 1207235191327700, guid: fd0bb8125c368e047835376edd357a42,
     type: 2}
-  SelectionPadCircleMaterial: {fileID: 2100000, guid: b6b5773f01b2447c28329e3c8304cb84,
-    type: 2}
-  SelectionPadBottomMaterial: {fileID: 2100000, guid: 9ef80c34fe6584f8284052714ee984ca,
+  InvalidPadPrefab: {fileID: 1415373617439018, guid: b930d0faf07413d4fac0f85a19431243,
     type: 2}
 --- !u!1001 &100100000
 Prefab:
