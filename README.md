@@ -78,11 +78,13 @@ the inspector and you should see your Navigation mesh display in the Scene View.
 - *Area Mask*: Defines the [Navmesh area](https://docs.unity3d.com/Manual/nav-AreasAndCosts.html) mask used by the 
   system.  One application of this is for optimization - by setting some objects as "non-teleportable," you can reduce
   the polycount of the preview mesh.
+
 Render Settings
 - *Ground Material Source*: The material to be used for previewing teleportable areas.
 - *Ground Alpha*: This is an animatable parameter that changes the alpha (transparency) of the ground material.  The 
   Vive Teleporter script (see below) uses this value to animate the preview when the player is selecting a place to 
   teleport.
+
 Raycast Settings
 - *Layer Mask*: Used to mask colliders that are recognized by the system.  Note: layers included in this mask are not 
   recognized *at all* by Navmesh queries (by the Parabolic pointer for example).  So, the arc pointer will go through 
@@ -92,6 +94,7 @@ Raycast Settings
   in the *Layer Mask* are considered invalid and all others are valid.
 - *Query Trigger Interaction*: Determines if trigger colliders are recognized by the system.  "Use Global" uses the 
   [Physics.queriesHitTriggers](https://docs.unity3d.com/ScriptReference/Physics-queriesHitTriggers.html) setting.
+
 Navmesh Settings
 - *Sample Radius*: This should be set to the 
   [Navmesh Voxel Size](https://docs.unity3d.com/Manual/nav-AdvancedSettings.html) that you are currently using.  You can
@@ -123,6 +126,7 @@ heirarchy and at any position in the scene.
 - *Nav Mesh*: [Required] The *Vive Navmesh* you are using (see above).
 - *Parabola Trajectory*: Use these options to configure the shape of the pointer's arc.  Increasing the Z parameter of
   the *Initial Velocity* OR increasing the Y parameter of the *Acceleration* will make the pointer arc travel further.
+
 Parabola Mesh Properties
 - *Point Count*: The maximum number of points in the parabola arc mesh.  Increasing this allows the arc to cover larger
   distances, but has a performance / rendering cost.
@@ -132,6 +136,7 @@ Parabola Mesh Properties
 - *Graphic Material*: The material used to render the parabola mesh.  The UVs of the arc mesh are automatically
   configured so that the given texture is scrolled smoothly along the arc (``U`` = 0 on left side of arc, 1 on right
   side.  ``V`` is repeated and scrolled along the length of the parabola).
+  
 Selection Pad Properties
 - *Selection Pad Prefab*: Prefab to use as the "selection pad."  This is placed at a tentative teleport destination when
   the player is pointing at a valid teleportable surface.  By default, I have included an orange selection pad mesh
