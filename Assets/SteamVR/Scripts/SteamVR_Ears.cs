@@ -15,7 +15,7 @@ public class SteamVR_Ears : MonoBehaviour
 	bool usingSpeakers;
 	Quaternion offset;
 
-	private void OnNewPosesApplied(params object[] args)
+	private void OnNewPosesApplied()
 	{
 		var origin = vrcam.origin;
 		var baseRotation = origin != null ? origin.rotation : Quaternion.identity;
@@ -30,23 +30,23 @@ public class SteamVR_Ears : MonoBehaviour
 		if (settings != null)
 		{
 			var error = EVRSettingsError.None;
-			if (settings.GetBool(OpenVR.k_pch_SteamVR_Section, OpenVR.k_pch_SteamVR_UsingSpeakers_Bool, false, ref error))
+			if (settings.GetBool(OpenVR.k_pch_SteamVR_Section, OpenVR.k_pch_SteamVR_UsingSpeakers_Bool, ref error))
 			{
 				usingSpeakers = true;
 
-				var yawOffset = settings.GetFloat(OpenVR.k_pch_SteamVR_Section, OpenVR.k_pch_SteamVR_SpeakersForwardYawOffsetDegrees_Float, 0.0f, ref error);
+				var yawOffset = settings.GetFloat(OpenVR.k_pch_SteamVR_Section, OpenVR.k_pch_SteamVR_SpeakersForwardYawOffsetDegrees_Float, ref error);
 				offset = Quaternion.Euler(0.0f, yawOffset, 0.0f);
 			}
 		}
 
 		if (usingSpeakers)
-			SteamVR_Utils.Event.Listen("new_poses_applied", OnNewPosesApplied);
+			SteamVR_Events.NewPosesApplied.Listen(OnNewPosesApplied);
 	}
 
 	void OnDisable()
 	{
 		if (usingSpeakers)
-			SteamVR_Utils.Event.Remove("new_poses_applied", OnNewPosesApplied);
+			SteamVR_Events.NewPosesApplied.Remove(OnNewPosesApplied);
 	}
 }
 

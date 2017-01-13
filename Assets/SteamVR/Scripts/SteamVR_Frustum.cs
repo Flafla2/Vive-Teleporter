@@ -87,15 +87,13 @@ public class SteamVR_Frustum : MonoBehaviour
 		GetComponent<MeshFilter>().mesh = mesh;
 	}
 
-	private void OnDeviceConnected(params object[] args)
+	private void OnDeviceConnected(int i, bool connected)
 	{
-		var i = (int)args[0];
 		if (i != (int)index)
 			return;
 
 		GetComponent<MeshFilter>().mesh = null;
 
-		var connected = (bool)args[1];
 		if (connected)
 		{
 			var system = OpenVR.System;
@@ -134,12 +132,12 @@ public class SteamVR_Frustum : MonoBehaviour
 	void OnEnable()
 	{
 		GetComponent<MeshFilter>().mesh = null;
-		SteamVR_Utils.Event.Listen("device_connected", OnDeviceConnected);
+		SteamVR_Events.DeviceConnected.Listen(OnDeviceConnected);
 	}
 
 	void OnDisable()
 	{
-		SteamVR_Utils.Event.Remove("device_connected", OnDeviceConnected);
+		SteamVR_Events.DeviceConnected.Remove(OnDeviceConnected);
 		GetComponent<MeshFilter>().mesh = null;
 	}
 

@@ -1,4 +1,4 @@
-SteamVR plugin for Unity - v1.1.1
+SteamVR plugin for Unity - v1.2.0
 Copyright (c) Valve Corporation, All rights reserved.
 
 
@@ -13,6 +13,36 @@ Requirements:
 The SteamVR runtime must be installed.  This can be found in Steam under Tools.
 
 The plugin currently only supports Windows / DX11.
+
+
+Changes for v1.2.0:
+
+* Updated to SteamVR runtime v1481926580 and SDK version 1.0.5.
+
+* Replaced SteamVR_Utils.Event with SteamVR_Events.<EventName> to avoid runtime memory allocation associated with use of params object[] args.
+
+* Added SteamVR_Events.<EventName>Action to make it easy to wrap callbacks to avoid memory allocation when components are frequently enabled/disabled at runtime.
+
+* Fixed other miscellaneous runtime memory allocation in SteamVR_Render and SteamVR_RenderModels.  (Suggestions by unity3d user @8bitgoose.)
+
+* Integrated fix for SteamVR_LaserPointer direction (from github user @fredsa).
+
+* Integrated fixes and comments for SteamVR_Teleporter (from github user @natewinck).
+
+* Removed SteamVR_Status and SteamVR_StatusText as they were using SteamVR_Utils.Event with generic strings which is no longer allowed.
+
+* Added SteamVR_Controller.assignAllBeforeIdentified (to allow controller to be assigned before identified as left vs right).  Suggested by github user @chrwoizi.
+
+* Added SteamVR_Controller.UpdateTargets public interface.  This allows spawning the component at runtime.  Suggested by github user @demonixis.
+
+* Fixed bug with SteamVR_TrackedObject when specifying origin.  Suggested by github user @fredsa.
+
+* Fixed issue with head camera reference in SteamVR_Camera.  Suggested by github user @pedrofe.
+
+Known issues:
+
+* The current beta version of Unity 5.6 breaks the normal operation of the SteamVR_UpdatePoses component (required for tracked controllers).
+To work around this in the meantime, you will need to manually add the SteamVR_UpdatePoses component to your main camera.
 
 
 Changes for v1.1.1:
@@ -332,8 +362,7 @@ up and running quickly and easily.  You are encouraged to modify these to suit y
 and provide feedback at http://steamcommunity.com/app/250820 or http://steamcommunity.com/app/358720/discussions
 
 Assets/SteamVR/Scenes/example.unity - A sample scene demonstrating the functionality provided by this plugin.   
-This also shows you how to set up a separate camera for rendering gui elements, and handle events to display  
-hmd status.
+This also shows you how to set up a separate camera for rendering gui elements.
 
 
 Details:
@@ -383,8 +412,7 @@ Prefabs:
 SteamVR_Camera component added to it, and the Expand button clicked.  It also includes a full set of Tracked Devices
 which will display and follow any connected tracked devices (e.g. controllers, base stations and cameras).
 
-[Status] - This is a set of components for providing various status info.  You can add it to your scene to get
-notifications for leaving the tracking bounds, et cetera.  It also includes an escape menu for tweaking options.
+[Status] - The prefab is for demonstration purposes only.  It adds an escape menu to your scene.
 Note: It uses the SteamVR_Overlay component, which is rather expensive rendering-wise.
 
 [SteamVR] - This object controls some global settings for SteamVR, most notably Tracking Space.  Legacy projects
@@ -438,27 +466,20 @@ and right culling mask to use to control rendering per eye if necessary.
 
 Events:
 
-SteamVR_Camera fires off several events.  These can be handled by registering for them through  
-SteamVR_Utils.Event.Listen.  Be sure to remove your handler when no longer needed.  The best pattern is to  
-Listen and Remove in OnEnable and OnDisable respectively.
+SteamVR fires off several events.  These can be handled by registering for them through
+SteamVR_Events.<EventType>.Listen.  Be sure to remove your handler when no longer needed.
+The best pattern is to Listen and Remove in OnEnable and OnDisable respectively.
 
-"initializing" - This event is sent when the hmd's tracking status changes to or from Unitialized.
+Initializing - This event is sent when the hmd's tracking status changes to or from Unitialized.
 
-"calibrating" - This event is sent when starting or stopping calibration with the new state.
+Calibrating - This event is sent when starting or stopping calibration with the new state.
 
-"out_of_range" - This event is sent when losing or reacquiring absolute positional tracking.  This will 
+OutOfRange - This event is sent when losing or reacquiring absolute positional tracking.  This will 
 never fire for the Rift DK1 since it does not have positional tracking.  For camera based trackers, this 
 happens when the hmd exits and enters the camera's view.
 
-"device_connected" - This event is sent when devices are connected or disconnected.  The device index is passed
+DeviceConnected - This event is sent when devices are connected or disconnected.  The device index is passed
 as the first argument, and the connected status (true / false) as the second argument.
-
-Feel free to leverage this system to fire off events of your own.  SteamVR_Utils.Event.Send takes any number  
-of parameters, and passes them on to all registered callbacks.
-
-A helper class has been included called SteamVR_Status which leverages these events to display hmd status to  
-the user.  Examples of this can be found in the example scene.  SteamVR_StatusText specifically, leverages this
-functionality to wrap up GUIText display, overriding SetAlpha.
 
 
 Keybindings (if using the [Status] prefab):

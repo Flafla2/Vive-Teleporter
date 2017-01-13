@@ -14,7 +14,11 @@
 
 	v2f vert(appdata_base v) {
 		v2f o;
+#if UNITY_VERSION >= 540
+		o.pos = UnityObjectToClipPos(v.vertex);
+#else
 		o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+#endif
 		o.tex = v.texcoord;
 		return o;
 	}
