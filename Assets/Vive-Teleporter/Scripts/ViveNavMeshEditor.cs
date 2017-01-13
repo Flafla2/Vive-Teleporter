@@ -40,7 +40,7 @@ public class ViveNavMeshEditor : Editor {
         GUIStyle bold_wrap = EditorStyles.boldLabel;
         bold_wrap.wordWrap = true;
         GUILayout.Label("Navmesh Preprocessor for HTC Vive Locomotion", bold_wrap);
-        GUILayout.Label("Adrian Biagioli 2016", EditorStyles.miniLabel);
+        GUILayout.Label("Adrian Biagioli 2017", EditorStyles.miniLabel);
 
         GUILayout.Label("Before Using", bold_wrap);
         GUIStyle wrap = EditorStyles.label;
@@ -165,7 +165,7 @@ public class ViveNavMeshEditor : Editor {
         bool temp_ignore_layer_mask = p_ignore_layer_mask.boolValue;
 
         EditorGUI.BeginChangeCheck();
-        temp_layer_mask = EditorGUILayout.LayerField("Layer Mask", temp_layer_mask);
+        temp_layer_mask = LayerMaskField("Layer Mask", temp_layer_mask);
         if(EditorGUI.EndChangeCheck())
         {
             p_layer_mask.intValue = temp_layer_mask;
@@ -512,6 +512,38 @@ public class ViveNavMeshEditor : Editor {
         int[] ret = new int[loop.Count];
         loop.CopyTo(ret);
         return ret;
+    }
+
+    static List<int> layerNumbers = new List<int>();
+
+    // From http://answers.unity3d.com/questions/42996/how-to-create-layermask-field-in-a-custom-editorwi.html
+    static LayerMask LayerMaskField(string label, LayerMask layerMask)
+    {
+        var layers = UnityEditorInternal.InternalEditorUtility.layers;
+
+        layerNumbers.Clear();
+
+        for (int i = 0; i < layers.Length; i++)
+            layerNumbers.Add(LayerMask.NameToLayer(layers[i]));
+
+        int maskWithoutEmpty = 0;
+        for (int i = 0; i < layerNumbers.Count; i++)
+        {
+            if (((1 << layerNumbers[i]) & layerMask.value) > 0)
+                maskWithoutEmpty |= (1 << i);
+        }
+
+        maskWithoutEmpty = UnityEditor.EditorGUILayout.MaskField(label, maskWithoutEmpty, layers);
+
+        int mask = 0;
+        for (int i = 0; i < layerNumbers.Count; i++)
+        {
+            if ((maskWithoutEmpty & (1 << i)) > 0)
+                mask |= (1 << layerNumbers[i]);
+        }
+        layerMask.value = mask;
+
+        return layerMask;
     }
 
     private struct Edge
