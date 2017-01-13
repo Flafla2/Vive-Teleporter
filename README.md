@@ -164,3 +164,6 @@ Teleporter* to the *Camera (eye)* object in that prefab.
 - *Fade Material*: Set this to the material found in *Vive-Teleporter/Art/Materials/FadeBlack.mat*
 - *Controllers*: Populate this with the SteamVR controller objects.  If you are using the SteamVR *[CameraRig]* prefab,
   you should populate this with the *Controller (left)* and *Controller (right)* objects.
+
+Optionally, you may set the *Touchpad Axis* to a non-zero vector to limit which area of the touchpad triggers the 
+teleport. For example, Vector2(0, 1) will only trigger the teleport when the upper region of the touchpad is clicked.
