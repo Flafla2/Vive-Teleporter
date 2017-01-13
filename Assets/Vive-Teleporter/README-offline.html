@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+  ::selection,a::selection{background:rgba(255,255,0,.3)}a,a::selection{color:#0645ad}hr,img{border:0}a,ins{text-decoration:none}::selection,ins,mark{color:#000}figure,hr{display:block;margin:1em 0}figure,hr,ol,p,ul{margin:1em 0}dfn,figcaption,mark{font-style:italic}table td,table th{padding:.2em 1em;border-top:1px solid #ddd;border-left:1px solid #ddd}.author,figure{text-align:center}html{font-size:100%;overflow-y:scroll;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}body{color:#444;font-family:Georgia,Palatino,'Palatino Linotype',Times,'Times New Roman',serif;font-size:12px;line-height:1.7;padding:1em;margin:auto;max-width:42em;background:#fefefe}a:visited{color:#0b0080}a:hover{color:#06e}a:active{color:#faa700}a:focus{outline:dotted thin}::-moz-selection{background:rgba(255,255,0,.3);color:#000}a::-moz-selection{background:rgba(255,255,0,.3);color:#0645ad}img{max-width:100%;-ms-interpolation-mode:bicubic;vertical-align:middle}h1,h2,h3,h4,h5,h6{color:#111;line-height:125%;margin-top:2em;font-weight:400}b,dt,h4,h5,h6,mark,strong{font-weight:700}h1{font-size:2.5em}h2{font-size:2em}h3{font-size:1.5em}h4{font-size:1.2em}h5{font-size:1em}h6{font-size:.9em}blockquote{color:#666;margin:0;padding-left:3em;border-left:.5em #EEE solid}hr{height:2px;border-top:1px solid #aaa;border-bottom:1px solid #eee;padding:0}code,kbd,pre,samp{color:#000;font-family:monospace,monospace;font-size:.98em}pre{white-space:pre;white-space:pre-wrap;word-wrap:break-word}ins{background:#ff9}mark{background:#ff0}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-.5em}sub{bottom:-.25em}ol,ul{padding:0 0 0 2em}dd:last-child,li p:last-child{margin-bottom:0}ol ol,ul ul{margin:.3em 0}dl{margin-bottom:1em}dt{margin-bottom:.8em}dd{margin:0 0 .8em 2em}figure img{border:none;margin:0 auto}figcaption{font-size:.8em;margin:0 0 .8em}table{margin-bottom:2em;border-bottom:1px solid #ddd;border-right:1px solid #ddd;border-spacing:0;border-collapse:collapse}table th{background-color:#eee}table td{vertical-align:top}.author{font-size:1.2em}@media only screen and (min-width:480px){body{font-size:14px}}@media only screen and (min-width:768px){body{font-size:16px}}@media print{blockquote,img,pre,tr{page-break-inside:avoid}*{background:0 0!important;color:#000!important;filter:none!important;-ms-filter:none!important}body{font-size:12pt;max-width:100%}a,a:visited{text-decoration:underline}hr{height:1px;border:0;border-bottom:1px solid #000}a[href]:after{content:" (" attr(href) ")"}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}blockquote,pre{border:1px solid #999;padding-right:1em}img{max-width:100%!important}@page :left{margin:15mm 20mm 15mm 10mm}@page :right{margin:15mm 10mm 15mm 20mm}h2,h3,p{orphans:3;widows:3}h2,h3{page-break-after:avoid}}
+  </style>
+</head>
+<body>
+<h1 id="htc-vive-teleportation-system-with-arc-pointer">HTC Vive Teleportation System with Arc Pointer</h1>
+<p>This is an easy-to-use teleportation system for the HTC Vive and the Unity game engine. The system is modelled after Valve's game for the Vive <a href="http://store.steampowered.com/app/450390/"><em>The Lab</em></a>, where the player can traverse VR environments that are bigger than the play area. Below you can see myself demoing the system (click for higher quality):</p>
+<p><a href="https://gfycat.com/HonorableComplexCutworm"><img src="https://thumbs.gfycat.com/HonorableComplexCutworm-size_restricted.gif" alt="Demo" /></a></p>
+<p>The system presented here solves a number of problems:</p>
+<ol>
+<li><strong>Calculating Navigable Space</strong>: You obviously don't want the player to be able to teleport out of bounds, or inside opaque objects. To solve this problem, my system uses Unity's generated Navigation Mesh as the boundaries that the player can teleport to. Because this process is piggybacking Unity's work, it is stable and can be used reliably in most projects. In order to preload this data, simply add a &quot;Vive Nav Mesh&quot; component anywhere in your scene, and click the &quot;Update Navmesh Data&quot; button in the inspector. You can of course update the Vive Nav Mesh component with new NavMesh bakes whenever you update the scene. The above process is illustrated below:</li>
+</ol>
+<p><a href="https://gfycat.com/SorrowfulThriftyAfricanpiedkingfisher"><img src="https://thumbs.gfycat.com/SorrowfulThriftyAfricanpiedkingfisher-size_restricted.gif" alt="Updating the NavMesh" /></a></p>
+<ol>
+<li><strong>Selecting a Teleport Destination</strong>: This system uses an intuitive parabolic curve selection mechanism using simple kinematic equations. Once again, this was inspired by Valve's <em>The Lab</em>. As the user raises their controller to a higher angle, the selection point grows farther away. If the user raises the remote past 45 degrees (maximum distance of a parabolic curve) the angle stays locked at that distance.</li>
+<li><strong>Representing the Play Area</strong>: It is often useful to know where the chaperone boundaries will be after teleporting. For this reason the system draws a box around where the chaperone bounds will be.</li>
+<li><strong>Reducing Discomfort</strong>: The screen fades in and fades out upon teleportation (the display &quot;blinks&quot;), reducing fatigue and nausea for the user.</li>
+</ol>
+<p>Provided in this Unity project (version 5.5.0p3) are two sample scenes: one is integrated directly with SteamVR and one may be used to demo the system if you don't own or have access to an HTC Vive. The source code is well documented and commented and may be used following the MIT Licence (see LICENSE.txt).</p>
+<h2 id="getting-started">Getting Started</h2>
+<p>To get a basic teleportation setup running you need to use three components:</p>
+<ul>
+<li>The <strong>Vive Nav Mesh</strong> component handles the conversion between Unity's NavMesh system to a renderable mesh. It also calculates the borders of the NavMesh so that they can be shown to the player when choosing a place to teleport.</li>
+<li>The <strong>Parabolic Pointer</strong> component generates/displays a pointer mesh and samples points from a <em>Vive Nav Mesh</em>.</li>
+<li>The <strong>Vive Teleporter</strong> component handles the actual teleportation mechanic. It pulls pointer data from a <strong>Parabolic Pointer</strong> so that it knows where to teleport. It also smoothly fades the screen in and out to prevent discomfort when the player decides to teleport. It also interfaces with SteamVR to handle button press events, controller management, haptic feedback, and displaying the room boundaries when choosing a place to teleport.</li>
+</ul>
+<p>Quick Note: The <strong>Teleport Vive</strong> and <strong>Parabolic Pointer</strong> components both automatically add a <strong>Border Renderer</strong> component. <strong>Border Renderer</strong> simply generates and renders a mesh to display the borders of the <strong>Vive Nav Mesh</strong> and the SteamVR play area.</p>
+<h3 id="step-1-configure-the-vive-nav-mesh">Step 1: Configure the Vive Nav Mesh</h3>
+<p><img src="http://i.imgur.com/ZmByfYq.png" alt="Vive Nav Mesh" /></p>
+<p>Start by adding a <em>Vive Nav Mesh</em> object. You can find a preconfigured Vive Nav Mesh at the path: <em>Vive-Teleporter/Prefabs/Navmesh.prefab</em> in your Assets folder. You can put this object anywhere in your scene's heirarchy and at any position in the scene.</p>
+<p>Next you need to bake a Navigation mesh (&quot;Navmesh&quot;) in Unity. This can be done in the Navigation window (Window &gt; Navigation).</p>
+<p>Here are a few more considerations to keep in mind:</p>
+<ul>
+<li><strong>You must use physics colliders on all teleportable surfaces.</strong> The parabolic pointer (see step 2 below) uses physics raycasts to determine where the player is pointing. Because of this all teleportable surfaces must have a collider (as well as surfaces like walls that aren't teleportable but block the pointer anyway).</li>
+<li>It might also be a good idea to <strong>assign different <a href="http://docs.unity3d.com/Manual/nav-AreasAndCosts.html">Navigation Areas</a></strong> to areas that are not teleportable. This is helpful for optimization reasons (so that the system doesn't need to render an enormous preview mesh when the player chooses where to teleport) and for game balance reasons (so that the player can't teleport outside of the map).</li>
+</ul>
+<p>After you have baked the Navmesh (using the &quot;Bake&quot; button at the bottom of the Navigation window) go back to the <em>Vive Nav Mesh</em> object you created earlier. If you have decided to assign specialized Navigation Areas (see above) you can choose which areas are teleportable with the <em>Area Mask</em> property. Then, click on the &quot;Update Navmesh Data&quot; button in the inspector and you should see your Navigation mesh display in the Scene View.</p>
+<h4 id="properties">Properties</h4>
+<ul>
+<li><em>Area Mask</em>: Defines the <a href="https://docs.unity3d.com/Manual/nav-AreasAndCosts.html">Navmesh area</a> mask used by the system. One application of this is for optimization - by setting some objects as &quot;non-teleportable,&quot; you can reduce the polycount of the preview mesh.</li>
+</ul>
+<p>Render Settings</p>
+<ul>
+<li><em>Ground Material Source</em>: The material to be used for previewing teleportable areas.</li>
+<li><em>Ground Alpha</em>: This is an animatable parameter that changes the alpha (transparency) of the ground material. The Vive Teleporter script (see below) uses this value to animate the preview when the player is selecting a place to teleport.</li>
+</ul>
+<p>Raycast Settings</p>
+<ul>
+<li><em>Layer Mask</em>: Used to mask colliders that are recognized by the system. Note: layers included in this mask are not recognized <em>at all</em> by Navmesh queries (by the Parabolic pointer for example). So, the arc pointer will go through colliders captured by the layer mask. This is useful for surfaces that you want to be recognized by other systems, such as AI, but not the teleporter.</li>
+<li><em>Ignore Layer Mask</em>: If true, layers included in the <em>Layer Mask</em> are considered &quot;valid&quot;. If false, layers included in the <em>Layer Mask</em> are considered invalid and all others are valid.</li>
+<li><em>Query Trigger Interaction</em>: Determines if trigger colliders are recognized by the system. &quot;Use Global&quot; uses the <a href="https://docs.unity3d.com/ScriptReference/Physics-queriesHitTriggers.html">Physics.queriesHitTriggers</a> setting.</li>
+</ul>
+<p>Navmesh Settings</p>
+<ul>
+<li><em>Sample Radius</em>: This should be set to the <a href="https://docs.unity3d.com/Manual/nav-AdvancedSettings.html">Navmesh Voxel Size</a> that you are currently using. You can find this in the Navigation Window (<code>Navigation &gt; Bake &gt; Advanced &gt; Voxel Size</code>). If this value is too small, you may experience issues where teleportable surfaces are not recognized correctly.</li>
+<li><em>Ignore Sloped Surfaces</em>: If true, the system will ignore sloped surfaces when querying the Navmesh. This is highly recommended, as players can't actually walk up sloped surfaces in VR!</li>
+<li><em>Dewarping Method</em>: In some cases (especially in larger scenes with lots of detailed geometry), Unity's Navmesh will not give an aesthetically pleasing output. For example, in some cases flat surfaces will appear as non-flat in the Navmesh output. You can use a so-called Dewarping method to filter Unity's navmesh in the Navmesh preview.</li>
+<li><em>None</em>: Use no dewarping. This is usually OK for smaller scenes.</li>
+<li><em>Round to Voxel Size</em>: Rounds the Y-position of each vertex in the preview mesh to the <em>Sample Radius</em> defined above. This has no additional overhead when Processing the Navmesh, but the preview mesh may appear to be floating above the ground.</li>
+<li><em>Raycast Downward</em>: This is the most accurate dewarping method, but comes with additional overhead when processing Navmesh data (that is, when Clicking the &quot;Update Navmesh Data&quot; button). For each vertex in the preview mesh, the system shoots a raycast downward to find the exact position of each vertex. This ensures the accuracy of the mesh.</li>
+</ul>
+<h3 id="step-2-configure-the-parabolic-pointer">Step 2: Configure the Parabolic Pointer</h3>
+<p><img src="http://i.imgur.com/1IYIAiE.png" alt="Parabolic Pointer" /></p>
+<p>Next add a <em>Parabolic Pointer</em> object. You can find a preconfigured Pointer at the path: <em>Vive-Teleporter/Prefabs/Pointer.prefab</em> in your Assets folder. You can put this object anywhere in your scene's heirarchy and at any position in the scene.</p>
+<h4 id="properties-1">Properties</h4>
+<ul>
+<li><em>Nav Mesh</em>: [Required] The <em>Vive Navmesh</em> you are using (see above).</li>
+<li><em>Parabola Trajectory</em>: Use these options to configure the shape of the pointer's arc. Increasing the Z parameter of the <em>Initial Velocity</em> OR increasing the Y parameter of the <em>Acceleration</em> will make the pointer arc travel further.</li>
+</ul>
+<p>Parabola Mesh Properties</p>
+<ul>
+<li><em>Point Count</em>: The maximum number of points in the parabola arc mesh. Increasing this allows the arc to cover larger distances, but has a performance / rendering cost.</li>
+<li><em>Point Spacing</em>: The distance (in meters) between each point in the parabola arc mesh. Decreasing this brings the arc mesh closer to a perfect parabola, but the arc covers smaller distances with the same Point Count (see above).</li>
+<li><em>Graphic Thickness</em>: The thickness (in meters) of the arc mesh.</li>
+<li><em>Graphic Material</em>: The material used to render the parabola mesh. The UVs of the arc mesh are automatically configured so that the given texture is scrolled smoothly along the arc (<code>U</code> = 0 on left side of arc, 1 on right side. <code>V</code> is repeated and scrolled along the length of the parabola).</li>
+</ul>
+<p>Selection Pad Properties</p>
+<ul>
+<li><em>Selection Pad Prefab</em>: Prefab to use as the &quot;selection pad.&quot; This is placed at a tentative teleport destination when the player is pointing at a valid teleportable surface. By default, I have included an orange selection pad mesh (<code>Vive-Teleporter/Art/Prefabs/Selection Pad</code>).</li>
+<li><em>Invalid Pad Prefab</em>: Prefab to use as the &quot;selection pad&quot; when pointing at an invalid / non-teleportable surface. By default, I have included a red X mesh (<code>Vive-Teleporter/Art/Prefabs/Invalid Selection Pad</code>)</li>
+</ul>
+<h3 id="step-3-configure-the-vive-teleporter">Step 3: Configure the Vive Teleporter</h3>
+<p><img src="http://i.imgur.com/dYCQaPN.png" alt="Vive Teleporter" /></p>
+<p>Lastly you need to add a <em>Vive Teleporter</em> Component (Component &gt; Vive Teleporter &gt; Vive Teleporter) to the <strong>SteamVR Camera</strong>. This is the camera that is used to render to the Vive's display. If you are using the <em>[CameraRig]</em> prefab from the <a href="https://www.assetstore.unity3d.com/en/#!/content/32647">SteamVR Unity plugin</a> you should add the <em>Vive Teleporter</em> to the <em>Camera (eye)</em> object in that prefab.</p>
+<h4 id="properties-2">Properties</h4>
+<ul>
+<li><em>Pointer</em>: [Required] Set this to the <em>Parabolic Pointer</em> object you created in Step 2</li>
+<li><em>Origin Transform</em>: Set this to the origin of the tracking space. If you are using the SteamVR Unity Plugin, this is the <em>[CameraRig]</em> GameObject. This is the object that is actually moved when the player teleports.</li>
+<li><em>Head Transform</em>: Set this to the transform of the player's head. This should be a child of the <em>Origin Transform</em>. If you are using the SteamVR Unity Plugin, this is the <em>Camera (head)</em> GameObject.</li>
+<li><em>Navmesh Animator</em>: Set this to the Animator of the <em>Vive Nav Mesh</em> object created in Step 1.</li>
+<li><em>Fade Material</em>: Set this to the material found in <em>Vive-Teleporter/Art/Materials/FadeBlack.mat</em></li>
+<li><em>Controllers</em>: Populate this with the SteamVR controller objects. If you are using the SteamVR <em>[CameraRig]</em> prefab, you should populate this with the <em>Controller (left)</em> and <em>Controller (right)</em> objects.</li>
+</ul>
+</body>
+</html>
