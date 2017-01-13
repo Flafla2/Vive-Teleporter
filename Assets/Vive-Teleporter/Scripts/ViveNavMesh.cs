@@ -26,8 +26,10 @@ public class ViveNavMesh : MonoBehaviour
                 Cleanup();
         }
     }
-    [SerializeField]
     private Material _GroundMaterial;
+    [FormerlySerializedAs("_GroundMaterial")]
+    [SerializeField]
+    private Material _GroundMaterialSource;
 
     /// \brief The alpha (transparency) value of the rendered ground mesh)
     /// \sa GroundMaterial
@@ -113,6 +115,16 @@ public class ViveNavMesh : MonoBehaviour
         Border.Points = SelectableMeshBorder;
 
         AlphaShaderID = Shader.PropertyToID("_Alpha");
+
+        if(_GroundMaterialSource != null)
+            GroundMaterial = new Material(_GroundMaterialSource);
+
+        if (GroundAlpha != LastGroundAlpha && GroundMaterial != null)
+        {
+            GroundMaterial.SetFloat(AlphaShaderID, GroundAlpha);
+            LastGroundAlpha = GroundAlpha;
+        }
+
 #if UNITY_EDITOR
         UnityEditor.SceneView.RepaintAll();
 #endif

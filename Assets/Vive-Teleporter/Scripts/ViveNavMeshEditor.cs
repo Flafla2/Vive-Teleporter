@@ -25,7 +25,7 @@ public class ViveNavMeshEditor : Editor {
     {
         p_area = serializedObject.FindProperty("_NavAreaMask");
         p_mesh = serializedObject.FindProperty("_SelectableMesh");
-        p_material = serializedObject.FindProperty("_GroundMaterial");
+        p_material = serializedObject.FindProperty("_GroundMaterialSource");
         p_alpha = serializedObject.FindProperty("GroundAlpha");
         p_layer_mask = serializedObject.FindProperty("_LayerMask");
         p_ignore_layer_mask = serializedObject.FindProperty("_IgnoreLayerMask");
@@ -152,7 +152,7 @@ public class ViveNavMeshEditor : Editor {
         {
             Undo.RecordObject(mesh, "Change Ground Material");
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            mesh.GroundMaterial = mesh.GroundMaterial; // Reload material
+            mesh.GroundMaterial = new Material((Material)p_material.objectReferenceValue); // Reload material
         }
 
         EditorGUILayout.PropertyField(p_alpha);

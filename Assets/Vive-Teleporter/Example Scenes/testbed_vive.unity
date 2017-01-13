@@ -456,6 +456,7 @@ MonoBehaviour:
   left: {fileID: 1724261813}
   right: {fileID: 1312848188}
   objects: []
+  assignAllBeforeIdentified: 0
 --- !u!1 &710685919
 GameObject:
   m_ObjectHideFlags: 0

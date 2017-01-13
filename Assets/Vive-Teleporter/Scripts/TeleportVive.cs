@@ -32,7 +32,9 @@ public class TeleportVive : MonoBehaviour {
 
     /// Material used to render the fade in/fade out quad
     [Tooltip("Material used to render the fade in/fade out quad.")]
-    public Material FadeMaterial;
+    [SerializeField]
+    private Material FadeMaterial;
+    private Material FadeMaterialInstance;
     private int MaterialFadeID;
 
     /// SteamVR controllers that should be polled.
@@ -77,6 +79,8 @@ public class TeleportVive : MonoBehaviour {
         PlaneMesh.triangles = elts;
         PlaneMesh.RecalculateBounds();
 
+        if(FadeMaterial != null)
+            FadeMaterialInstance = new Material(FadeMaterial);
         // Set some standard variables
         MaterialFadeID = Shader.PropertyToID("_Fade");
         EnabledAnimatorID = Animator.StringToHash("Enabled");
@@ -146,8 +150,8 @@ public class TeleportVive : MonoBehaviour {
                 alpha = 1 - alpha;
 
             Matrix4x4 local = Matrix4x4.TRS(Vector3.forward * 0.3f, Quaternion.identity, Vector3.one);
-            FadeMaterial.SetPass(0);
-            FadeMaterial.SetFloat(MaterialFadeID, alpha);
+            FadeMaterialInstance.SetPass(0);
+            FadeMaterialInstance.SetFloat(MaterialFadeID, alpha);
             Graphics.DrawMeshNow(PlaneMesh, transform.localToWorldMatrix * local);
         }
     }
