@@ -1,11 +1,9 @@
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
 //======= Copyright (c) Valve Corporation, All rights reserved. ===============
 //
 // Purpose: Used to show the outline of the object
 //
 //=============================================================================
-
+// UNITY_SHADER_NO_UPGRADE
 Shader "Valve/VR/Silhouette"
 {
 	//-------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -52,7 +50,7 @@ Shader "Valve/VR/Silhouette"
 #if UNITY_VERSION >= 540
 			o.vPositionPs = UnityObjectToClipPos( i.vPositionOs.xyzw );
 #else
-			o.vPositionPs = UnityObjectToClipPos( i.vPositionOs.xyzw );
+			o.vPositionPs = mul( UNITY_MATRIX_MVP, i.vPositionOs.xyzw );
 #endif
 			return o;
 		}
@@ -71,7 +69,7 @@ Shader "Valve/VR/Silhouette"
 #if UNITY_VERSION >= 540
 			extruded.vPositionPs = UnityObjectToClipPos( vertex.vPositionOs.xyzw );
 #else
-			extruded.vPositionPs = UnityObjectToClipPos( vertex.vPositionOs.xyzw );
+			extruded.vPositionPs = mul( UNITY_MATRIX_MVP, vertex.vPositionOs.xyzw );
 #endif
 			extruded.vPositionPs.xy += vOffsetPs.xy * extruded.vPositionPs.w * g_flOutlineWidth;
 

@@ -1,5 +1,5 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
+﻿//======= Copyright (c) Valve Corporation, All rights reserved. ===============
+// UNITY_SHADER_NO_UPGRADE
 Shader "Custom/SteamVR_ColorOut" {
 	Properties { _MainTex ("Base (RGB)", 2D) = "white" {} }
 
@@ -19,7 +19,7 @@ Shader "Custom/SteamVR_ColorOut" {
 #if UNITY_VERSION >= 540
 		o.pos = UnityObjectToClipPos(v.vertex);
 #else
-		o.pos = UnityObjectToClipPos(v.vertex);
+		o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 #endif
 		o.tex = v.texcoord;
 		return o;
