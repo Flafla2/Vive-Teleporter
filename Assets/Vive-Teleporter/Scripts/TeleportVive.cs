@@ -55,6 +55,7 @@ public class TeleportVive : MonoBehaviour {
     private float TeleportTimeMarker = -1;
 
     private Mesh PlaneMesh;
+    private bool hasRotated = false;
 
     void Start()
     {
@@ -174,7 +175,14 @@ public class TeleportVive : MonoBehaviour {
                     // We have finished fading out - time to teleport!
                     Vector3 offset = OriginTransform.position - HeadTransform.position;
                     offset.y = 0;
+
                     OriginTransform.position = Pointer.SelectedPoint + offset;
+
+                    if (Pointer.forward != Vector3.zero)
+                    {
+                        OriginTransform.rotation = Quaternion.LookRotation(Pointer.normal, Pointer.forward * -1);
+                        OriginTransform.Rotate(90, 0, 0);
+                    }
                 }
 
                 TeleportTimeMarker = Time.time;
@@ -191,8 +199,10 @@ public class TeleportVive : MonoBehaviour {
             int index = (int)ActiveController.index;
             var device = SteamVR_Controller.Input(index);
             bool shouldTeleport = device.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad);
+            bool shouldRotate = device.GetPress(SteamVR_Controller.ButtonMask.Trigger);
+            if (shouldRotate) hasRotated = true;
             bool shouldCancel = device.GetPressUp(SteamVR_Controller.ButtonMask.Grip);
-            if (shouldTeleport || shouldCancel)
+            if ((shouldTeleport || shouldCancel || hasRotated) && !shouldRotate)
             {
                 // If the user has decided to teleport (ie lets go of touchpad) then remove all visual indicators
                 // related to selecting things and actually teleport
@@ -202,9 +212,11 @@ public class TeleportVive : MonoBehaviour {
                     // Begin teleport sequence
                     CurrentTeleportState = TeleportState.Teleporting;
                     TeleportTimeMarker = Time.time;
-                }
-                else
+                } else
+                {
                     CurrentTeleportState = TeleportState.None;
+                    hasRotated = false;
+                }
                 
                 // Reset active controller, disable pointer, disable visual indicators
                 ActiveController = null;
@@ -220,6 +232,8 @@ public class TeleportVive : MonoBehaviour {
                 Pointer.transform.localScale = Vector3.one;
             } else
             {
+                Pointer.OriginTransform = OriginTransform;
+                Pointer.shouldRotate = shouldRotate;
                 // The user is still deciding where to teleport and has the touchpad held down.
                 // Note: rendering of the parabolic pointer / marker is done in ParabolicPointer
                 Vector3 offset = HeadTransform.position - OriginTransform.position;

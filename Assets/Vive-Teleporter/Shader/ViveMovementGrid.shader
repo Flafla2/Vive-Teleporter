@@ -1,4 +1,6 @@
-﻿Shader "Custom/Vive Movement Grid"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Custom/Vive Movement Grid"
 {
 	Properties
 	{
@@ -38,7 +40,7 @@
 		v2f vert(appdata v)
 		{
 			v2f o;
-			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.vertex = UnityObjectToClipPos(v.vertex);
 
 			float3 worldPos = mul(unity_ObjectToWorld, v.vertex);
 			o.uv = worldPos.xz / _TexScale;

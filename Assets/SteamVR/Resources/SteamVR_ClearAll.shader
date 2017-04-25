@@ -1,4 +1,6 @@
-﻿Shader "Custom/SteamVR_ClearAll" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Custom/SteamVR_ClearAll" {
 	Properties { _MainTex ("Base (RGB)", 2D) = "white" {} }
 
 	CGINCLUDE
@@ -17,7 +19,7 @@
 #if UNITY_VERSION >= 540
 		o.pos = UnityObjectToClipPos(v.vertex);
 #else
-		o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+		o.pos = UnityObjectToClipPos(v.vertex);
 #endif
 		o.tex = v.texcoord;
 		return o;
