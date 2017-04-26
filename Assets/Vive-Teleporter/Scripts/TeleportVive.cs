@@ -180,8 +180,10 @@ public class TeleportVive : MonoBehaviour {
 
                     if (Pointer.forward != Vector3.zero)
                     {
-                        OriginTransform.rotation = Quaternion.LookRotation(Pointer.normal, Pointer.forward * -1);
+                        // Origin = Origin + Pointer - Head
+                        OriginTransform.rotation = Quaternion.LookRotation(Pointer.normal, (OriginTransform.rotation * Pointer.pointerRotation * Quaternion.Inverse(HeadTransform.rotation)) * Vector3.forward * -1);
                         OriginTransform.Rotate(90, 0, 0);
+                        Pointer.forward = Vector3.zero; // reset so next teleport doesn't use custom rotation
                     }
                 }
 
@@ -232,7 +234,7 @@ public class TeleportVive : MonoBehaviour {
                 Pointer.transform.localScale = Vector3.one;
             } else
             {
-                Pointer.OriginTransform = OriginTransform;
+                Pointer.HeadTransform = HeadTransform;
                 Pointer.shouldRotate = shouldRotate;
                 // The user is still deciding where to teleport and has the touchpad held down.
                 // Note: rendering of the parabolic pointer / marker is done in ParabolicPointer

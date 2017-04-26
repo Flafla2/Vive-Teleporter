@@ -20,9 +20,10 @@ public class ParabolicPointer : MonoBehaviour {
     [Tooltip("Material to use to render the parabola mesh")]
     public Material GraphicMaterial;
     public bool shouldRotate;
-    public Transform OriginTransform;
+    public Transform HeadTransform;
     public Vector3 normal;
     public Vector3 forward;
+    public Quaternion pointerRotation;
     [Header("Selection Pad Properties")]
     [SerializeField]
     [Tooltip("Prefab to use as the selection pad when the player is pointing at a valid teleportable surface.")]
@@ -236,17 +237,17 @@ public class ParabolicPointer : MonoBehaviour {
             {
                 if (shouldRotate)
                 {
-                    forward = velocity * -1;
+                    forward = -velocity.normalized;
                 }
-
                 if (forward != Vector3.zero)
                 {
                     SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal, forward);
                 } else
                 {
-                    SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal, OriginTransform.forward);
+                    SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal, -HeadTransform.forward);
                 }
                 SelectionPadObject.transform.Rotate(90, 0, 0);
+                pointerRotation = SelectionPadObject.transform.rotation;
             }
         }
         if(InvalidPadObject != null)
