@@ -19,6 +19,11 @@ public class ParabolicPointer : MonoBehaviour {
     public float GraphicThickness = 0.2f;
     [Tooltip("Material to use to render the parabola mesh")]
     public Material GraphicMaterial;
+    public bool shouldRotate;
+    public Transform HeadTransform;
+    public Vector3 normal;
+    public Vector3 forward;
+    public Quaternion pointerRotation;
     [Header("Selection Pad Properties")]
     [SerializeField]
     [Tooltip("Prefab to use as the selection pad when the player is pointing at a valid teleportable surface.")]
@@ -210,8 +215,9 @@ public class ParabolicPointer : MonoBehaviour {
         CurrentParabolaAngleY = ClampInitialVelocity(ref velocity, out velocity_normalized);
         CurrentPointVector = velocity_normalized;
 
-        Vector3 normal;
-        PointOnNavMesh = CalculateParabolicCurve(
+        if (!shouldRotate)
+        {
+            PointOnNavMesh = CalculateParabolicCurve(
             transform.position,
             velocity,
             Acceleration, PointSpacing, PointCount,
@@ -219,7 +225,8 @@ public class ParabolicPointer : MonoBehaviour {
             ParabolaPoints,
             out normal);
 
-        SelectedPoint = ParabolaPoints[ParabolaPoints.Count-1];
+            SelectedPoint = ParabolaPoints[ParabolaPoints.Count - 1];
+        }
 
         // 2. Render Parabola graphics
         if(SelectionPadObject != null)
@@ -228,8 +235,19 @@ public class ParabolicPointer : MonoBehaviour {
             SelectionPadObject.transform.position = SelectedPoint + Vector3.one * 0.005f;
             if(PointOnNavMesh)
             {
-                SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal);
+                if (shouldRotate)
+                {
+                    forward = -velocity.normalized;
+                }
+                if (forward != Vector3.zero)
+                {
+                    SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal, forward);
+                } else
+                {
+                    SelectionPadObject.transform.rotation = Quaternion.LookRotation(normal, -HeadTransform.forward);
+                }
                 SelectionPadObject.transform.Rotate(90, 0, 0);
+                pointerRotation = SelectionPadObject.transform.rotation;
             }
         }
         if(InvalidPadObject != null)
