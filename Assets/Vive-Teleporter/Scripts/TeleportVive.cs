@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Valve.VR;
+using UnityEngine.Rendering;
 
 [AddComponentMenu("Vive Teleporter/Vive Teleporter")]
 [RequireComponent(typeof(Camera), typeof(BorderRenderer))]
@@ -34,7 +35,8 @@ public class TeleportVive : MonoBehaviour {
     [Tooltip("Material used to render the fade in/fade out quad.")]
     [SerializeField]
     private Material FadeMaterial;
-    private Material FadeMaterialInstance;
+    private CommandBuffer FadeCommandBuffer;
+    private MaterialPropertyBlock FadePropertyBlock;
     private int MaterialFadeID;
 
     /// SteamVR controllers that should be polled.
@@ -79,11 +81,11 @@ public class TeleportVive : MonoBehaviour {
         PlaneMesh.triangles = elts;
         PlaneMesh.RecalculateBounds();
 
-        if(FadeMaterial != null)
-            FadeMaterialInstance = new Material(FadeMaterial);
         // Set some standard variables
         MaterialFadeID = Shader.PropertyToID("_Fade");
         EnabledAnimatorID = Animator.StringToHash("Enabled");
+        FadeCommandBuffer = new CommandBuffer ();
+        FadePropertyBlock = new MaterialPropertyBlock ();
 
         RoomBorder = GetComponent<BorderRenderer>();
 
@@ -150,9 +152,10 @@ public class TeleportVive : MonoBehaviour {
                 alpha = 1 - alpha;
 
             Matrix4x4 local = Matrix4x4.TRS(Vector3.forward * 0.3f, Quaternion.identity, Vector3.one);
-            FadeMaterialInstance.SetPass(0);
-            FadeMaterialInstance.SetFloat(MaterialFadeID, alpha);
-            Graphics.DrawMeshNow(PlaneMesh, transform.localToWorldMatrix * local);
+            FadePropertyBlock.SetFloat(MaterialFadeID, alpha);
+            FadeCommandBuffer.Clear();
+            FadeCommandBuffer.DrawMesh(PlaneMesh, transform.localToWorldMatrix * local, FadeMaterial, 0, 0, FadePropertyBlock);
+            Graphics.ExecuteCommandBuffer(FadeCommandBuffer);
         }
     }
 
