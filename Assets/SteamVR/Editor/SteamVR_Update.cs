@@ -9,158 +9,172 @@ using UnityEditor;
 using System.IO;
 using System.Text.RegularExpressions;
 
-[InitializeOnLoad]
-public class SteamVR_Update : EditorWindow
+#if UNITY_2018_3_OR_NEWER
+#pragma warning disable CS0618
+#endif
+
+namespace Valve.VR
 {
-	const string currentVersion = "1.2.0";
-	const string versionUrl = "http://media.steampowered.com/apps/steamvr/unitypluginversion.txt";
-	const string notesUrl = "http://media.steampowered.com/apps/steamvr/unityplugin-v{0}.txt";
-	const string pluginUrl = "http://u3d.as/content/valve-corporation/steam-vr-plugin";
-	const string doNotShowKey = "SteamVR.DoNotShow.v{0}";
+    [InitializeOnLoad]
+    public class SteamVR_Update : EditorWindow
+    {
+        const string currentVersion = "2.0";
+        const string versionUrl = "http://media.steampowered.com/apps/steamvr/unitypluginversion.txt";
+        const string notesUrl = "http://media.steampowered.com/apps/steamvr/unityplugin-v{0}.txt";
+        const string pluginUrl = "http://u3d.as/content/valve-corporation/steam-vr-plugin";
+        const string doNotShowKey = "SteamVR.DoNotShow.v{0}";
 
-	static WWW wwwVersion, wwwNotes;
-	static string version, notes;
-	static SteamVR_Update window;
+        static bool gotVersion = false;
+        static WWW wwwVersion, wwwNotes;
+        static string version, notes;
+        static SteamVR_Update window;
 
-	static SteamVR_Update()
-	{
-		wwwVersion = new WWW(versionUrl);
-		EditorApplication.update += Update;
-	}
+        static SteamVR_Update()
+        {
+            EditorApplication.update += Update;
+        }
 
-	static void Update()
-	{
-		if (wwwVersion != null)
-		{
-			if (!wwwVersion.isDone)
-				return;
+        static void Update()
+        {
+            if (!gotVersion)
+            {
+                if (wwwVersion == null)
+                    wwwVersion = new WWW(versionUrl);
 
-			if (UrlSuccess(wwwVersion))
-				version = wwwVersion.text;
+                if (!wwwVersion.isDone)
+                    return;
 
-			wwwVersion = null;
+                if (UrlSuccess(wwwVersion))
+                    version = wwwVersion.text;
 
-			if (ShouldDisplay())
-			{
-				var url = string.Format(notesUrl, version);
-				wwwNotes = new WWW(url);
+                wwwVersion = null;
+                gotVersion = true;
 
-				window = GetWindow<SteamVR_Update>(true);
-				window.minSize = new Vector2(320, 440);
-				//window.title = "SteamVR";
-			}
-		}
+                if (ShouldDisplay())
+                {
+                    var url = string.Format(notesUrl, version);
+                    wwwNotes = new WWW(url);
 
-		if (wwwNotes != null)
-		{
-			if (!wwwNotes.isDone)
-				return;
+                    window = GetWindow<SteamVR_Update>(true);
+                    window.minSize = new Vector2(320, 440);
+                    //window.title = "SteamVR";
+                }
+            }
 
-			if (UrlSuccess(wwwNotes))
-				notes = wwwNotes.text;
+            if (wwwNotes != null)
+            {
+                if (!wwwNotes.isDone)
+                    return;
 
-			wwwNotes = null;
+                if (UrlSuccess(wwwNotes))
+                    notes = wwwNotes.text;
 
-			if (notes != "")
-				window.Repaint();
-		}
+                wwwNotes = null;
 
-		EditorApplication.update -= Update;
-	}
+                if (notes != "")
+                    window.Repaint();
+            }
 
-	static bool UrlSuccess(WWW www)
-	{
-		if (!string.IsNullOrEmpty(www.error))
-			return false;
-		if (Regex.IsMatch(www.text, "404 not found", RegexOptions.IgnoreCase))
-			return false;
-		return true;
-	}
+            EditorApplication.update -= Update;
+        }
 
-	static bool ShouldDisplay()
-	{
-		if (string.IsNullOrEmpty(version))
-			return false;
-		if (version == currentVersion)
-			return false;
-		if (EditorPrefs.HasKey(string.Format(doNotShowKey, version)))
-			return false;
+        static bool UrlSuccess(WWW www)
+        {
+            if (!string.IsNullOrEmpty(www.error))
+                return false;
+            if (Regex.IsMatch(www.text, "404 not found", RegexOptions.IgnoreCase))
+                return false;
+            return true;
+        }
 
-		// parse to see if newer (e.g. 1.0.4 vs 1.0.3)
-		var versionSplit = version.Split('.');
-		var currentVersionSplit = currentVersion.Split('.');
-		for (int i = 0; i < versionSplit.Length && i < currentVersionSplit.Length; i++)
-		{
-			int versionValue, currentVersionValue;
-			if (int.TryParse(versionSplit[i], out versionValue) &&
-				int.TryParse(currentVersionSplit[i], out currentVersionValue))
-			{
-				if (versionValue > currentVersionValue)
-					return true;
-				if (versionValue < currentVersionValue)
-					return false;
-			}
-		}
+        static bool ShouldDisplay()
+        {
+            if (string.IsNullOrEmpty(version))
+                return false;
+            if (version == currentVersion)
+                return false;
+            if (EditorPrefs.HasKey(string.Format(doNotShowKey, version)))
+                return false;
 
-		// same up to this point, now differentiate based on number of sub values (e.g. 1.0.4.1 vs 1.0.4)
-		if (versionSplit.Length <= currentVersionSplit.Length)
-			return false;
+            // parse to see if newer (e.g. 1.0.4 vs 1.0.3)
+            var versionSplit = version.Split('.');
+            var currentVersionSplit = currentVersion.Split('.');
+            for (int i = 0; i < versionSplit.Length && i < currentVersionSplit.Length; i++)
+            {
+                int versionValue, currentVersionValue;
+                if (int.TryParse(versionSplit[i], out versionValue) &&
+                    int.TryParse(currentVersionSplit[i], out currentVersionValue))
+                {
+                    if (versionValue > currentVersionValue)
+                        return true;
+                    if (versionValue < currentVersionValue)
+                        return false;
+                }
+            }
 
-		return true;
-	}
+            // same up to this point, now differentiate based on number of sub values (e.g. 1.0.4.1 vs 1.0.4)
+            if (versionSplit.Length <= currentVersionSplit.Length)
+                return false;
 
-	Vector2 scrollPosition;
-	bool toggleState;
+            return true;
+        }
 
-	string GetResourcePath()
-	{
-		var ms = MonoScript.FromScriptableObject(this);
-		var path = AssetDatabase.GetAssetPath(ms);
-		path = Path.GetDirectoryName(path);
-		return path.Substring(0, path.Length - "Editor".Length) + "Textures/";
-	}
+        Vector2 scrollPosition;
+        bool toggleState;
 
-	public void OnGUI()
-	{
-		EditorGUILayout.HelpBox("A new version of the SteamVR plugin is available!", MessageType.Warning);
+        string GetResourcePath()
+        {
+            var ms = MonoScript.FromScriptableObject(this);
+            var path = AssetDatabase.GetAssetPath(ms);
+            path = Path.GetDirectoryName(path);
+            return path.Substring(0, path.Length - "Editor".Length) + "Textures/";
+        }
 
-		var resourcePath = GetResourcePath();
-		var logo = AssetDatabase.LoadAssetAtPath<Texture2D>(resourcePath + "logo.png");
-		var rect = GUILayoutUtility.GetRect(position.width, 150, GUI.skin.box);
-		if (logo)
-			GUI.DrawTexture(rect, logo, ScaleMode.ScaleToFit);
+        public void OnGUI()
+        {
+            EditorGUILayout.HelpBox("A new version of the SteamVR plugin is available!", MessageType.Warning);
 
-		scrollPosition = GUILayout.BeginScrollView(scrollPosition);
+            var resourcePath = GetResourcePath();
+            var logo = AssetDatabase.LoadAssetAtPath<Texture2D>(resourcePath + "logo.png");
+            var rect = GUILayoutUtility.GetRect(position.width, 150, GUI.skin.box);
+            if (logo)
+                GUI.DrawTexture(rect, logo, ScaleMode.ScaleToFit);
 
-		GUILayout.Label("Current version: " + currentVersion);
-		GUILayout.Label("New version: " + version);
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
-		if (notes != "")
-		{
-			GUILayout.Label("Release notes:");
-			EditorGUILayout.HelpBox(notes, MessageType.Info);
-		}
+            GUILayout.Label("Current version: " + currentVersion);
+            GUILayout.Label("New version: " + version);
 
-		GUILayout.EndScrollView();
+            if (notes != "")
+            {
+                GUILayout.Label("Release notes:");
+                EditorGUILayout.HelpBox(notes, MessageType.Info);
+            }
 
-		GUILayout.FlexibleSpace();
+            GUILayout.EndScrollView();
 
-		if (GUILayout.Button("Get Latest Version"))
-		{
-			Application.OpenURL(pluginUrl);
-		}
+            GUILayout.FlexibleSpace();
 
-		EditorGUI.BeginChangeCheck();
-		var doNotShow = GUILayout.Toggle(toggleState, "Do not prompt for this version again.");
-		if (EditorGUI.EndChangeCheck())
-		{
-			toggleState = doNotShow;
-			var key = string.Format(doNotShowKey, version);
-			if (doNotShow)
-				EditorPrefs.SetBool(key, true);
-			else
-				EditorPrefs.DeleteKey(key);
-		}
-	}
+            if (GUILayout.Button("Get Latest Version"))
+            {
+                Application.OpenURL(pluginUrl);
+            }
+
+            EditorGUI.BeginChangeCheck();
+            var doNotShow = GUILayout.Toggle(toggleState, "Do not prompt for this version again.");
+            if (EditorGUI.EndChangeCheck())
+            {
+                toggleState = doNotShow;
+                var key = string.Format(doNotShowKey, version);
+                if (doNotShow)
+                    EditorPrefs.SetBool(key, true);
+                else
+                    EditorPrefs.DeleteKey(key);
+            }
+        }
+    }
 }
 
+#if UNITY_2018_3_OR_NEWER
+#pragma warning restore CS0618
+#endif

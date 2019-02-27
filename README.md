@@ -162,5 +162,6 @@ Teleporter* to the *Camera (eye)* object in that prefab.
   If you are using the SteamVR Unity Plugin, this is the *Camera (head)* GameObject.
 - *Navmesh Animator*: Set this to the Animator of the *Vive Nav Mesh* object created in Step 1.
 - *Fade Material*: Set this to the material found in *Vive-Teleporter/Art/Materials/FadeBlack.mat*
-- *Controllers*: Populate this with the SteamVR controller objects.  If you are using the SteamVR *[CameraRig]* prefab,
-  you should populate this with the *Controller (left)* and *Controller (right)* objects.
+- *Controllers*: Populate this with the Vive Hand objects.  If you are using the SteamVR *[CameraRig]* prefab,
+  you should populate this with the *Controller (left)* and *Controller (right)* with the Vive Hand Script attach
+  and configured with each hand's input.
